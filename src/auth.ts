@@ -8,6 +8,7 @@ import { signInSchema } from "@/lib/validations/auth";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  trustHost: true,
 
   // JWT strategy is required when using Credentials provider
   session: { strategy: "jwt" },

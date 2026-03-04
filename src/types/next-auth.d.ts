@@ -10,6 +10,7 @@ declare module "next-auth" {
       isBuyer: boolean;
       isSeller: boolean;
       isFreelancer: boolean;
+      emailVerified: Date | null;
     } & DefaultSession["user"];
   }
 
@@ -23,6 +24,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
+    emailVerified: Date | null;
     isBuyer: boolean;
     isSeller: boolean;
     isFreelancer: boolean;

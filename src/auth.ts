@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           image: user.image,
+          emailVerified: user.emailVerified,
           isBuyer: user.isBuyer,
           isSeller: user.isSeller,
           isFreelancer: user.isFreelancer,
@@ -68,6 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.emailVerified = (user as any).emailVerified ?? null;
         token.isBuyer = (user as any).isBuyer ?? true;
         token.isSeller = (user as any).isSeller ?? false;
         token.isFreelancer = (user as any).isFreelancer ?? false;
@@ -79,6 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.emailVerified = (token.emailVerified as Date | null) ?? null;
         (session.user as any).isBuyer = token.isBuyer;
         (session.user as any).isSeller = token.isSeller;
         (session.user as any).isFreelancer = token.isFreelancer;

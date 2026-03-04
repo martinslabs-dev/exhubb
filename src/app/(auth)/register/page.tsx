@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
 import Link from "next/link";
 import {
   Eye,
@@ -99,7 +98,7 @@ function getStrength(pw: string): { score: number; label: string; color: string 
   return { score: s, ...map[s] };
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const searchParams = useSearchParams();
   const urlIntent = searchParams.get("intent") as Intent | null;
 
@@ -453,5 +452,13 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

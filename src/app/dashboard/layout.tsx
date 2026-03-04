@@ -21,12 +21,12 @@ export default async function DashboardLayout({
 
   const user = {
     id:           session.user.id,
-    name:         session.user.name,
-    email:        session.user.email,
-    image:        session.user.image,
-    isBuyer:      session.user.isBuyer,
-    isSeller:     session.user.isSeller,
-    isFreelancer: session.user.isFreelancer,
+    name:         session.user.name  ?? null,
+    email:        session.user.email ?? null,
+    image:        session.user.image ?? null,
+    isBuyer:      (session.user as any).isBuyer      ?? true,
+    isSeller:     (session.user as any).isSeller     ?? false,
+    isFreelancer: (session.user as any).isFreelancer ?? false,
   };
 
   return <DashboardShell user={user}>{children}</DashboardShell>;

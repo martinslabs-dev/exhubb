@@ -35,12 +35,13 @@ const categories = [
 ];
 
 export default function Navbar() {
-  const [scrolled,    setScrolled]    = useState(false);
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [searchFocus, setSearchFocus] = useState(false);
-  const [catOpen,     setCatOpen]     = useState(false);
-  const [searchVal,   setSearchVal]   = useState("");
-  const [cartCount]                   = useState(3);
+  const [scrolled,      setScrolled]      = useState(false);
+  const [mobileOpen,    setMobileOpen]    = useState(false);
+  const [searchFocus,   setSearchFocus]   = useState(false);
+  const [catOpen,       setCatOpen]       = useState(false);
+  const [searchVal,     setSearchVal]     = useState("");
+  const [mobileSearch,  setMobileSearch]  = useState(false);
+  const [cartCount]                       = useState(3);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -142,15 +143,15 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar — hidden on mobile, visible sm+ */}
             <motion.div
               animate={{ width: searchFocus ? "100%" : "auto" }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="flex-1 max-w-xl relative"
+              className="hidden sm:flex flex-1 max-w-xl relative"
             >
               <div
                 className={cn(
-                  "flex items-center rounded-full border transition-all duration-200 overflow-hidden",
+                  "flex items-center rounded-full border transition-all duration-200 overflow-hidden w-full",
                   searchFocus
                     ? "border-primary-500 shadow-[0_0_0_3px_rgba(34,197,94,0.15)] bg-white"
                     : "border-gray-200 bg-gray-50 hover:border-gray-300"
@@ -213,6 +214,15 @@ export default function Navbar() {
                 <span>Join Free</span>
               </motion.a>
 
+              {/* Mobile Search Toggle */}
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setMobileSearch(!mobileSearch)}
+                className="p-2 rounded-xl hover:bg-gray-100 transition-colors sm:hidden"
+              >
+                {mobileSearch ? <X className="w-5 h-5 text-gray-600" /> : <Search className="w-5 h-5 text-gray-600" />}
+              </motion.button>
+
               {/* Cart */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -256,6 +266,38 @@ export default function Navbar() {
           </div>
         </div>
       </motion.header>
+
+      {/* ── Mobile Search Bar ───────────────────────────────── */}
+      <AnimatePresence>
+        {mobileSearch && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="sticky top-16 z-40 bg-white border-b border-gray-100 sm:hidden overflow-hidden"
+          >
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-full border border-primary-400 shadow-[0_0_0_3px_rgba(34,197,94,0.12)] bg-white">
+                <Search className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchVal}
+                  onChange={(e) => setSearchVal(e.target.value)}
+                  placeholder="Search products, services, freelancers..."
+                  className="flex-1 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
+                />
+                {searchVal && (
+                  <button onClick={() => setSearchVal("")} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Mobile Drawer ────────────────────────────────────── */}
       <AnimatePresence>

@@ -1,10 +1,13 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import Facebook from "next-auth/providers/facebook";
+import Twitter from "next-auth/providers/twitter";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signInSchema } from "@/lib/validations/auth";
+import { redis } from "@/lib/redis";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -25,6 +28,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
+
+    // ── Facebook ────────────────────────────────────────────
+    Facebook({
+      clientId: process.env.AUTH_FACEBOOK_ID,
+      clientSecret: process.env.AUTH_FACEBOOK_SECRET,
+    }),
+
+    // ── X (Twitter) ─────────────────────────────────────────
+    Twitter({
+      clientId: process.env.AUTH_TWITTER_ID,
+      clientSecret: process.env.AUTH_TWITTER_SECRET,
     }),
 
     // ── Credentials (email + password) ───────────────────────
@@ -62,6 +77,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
+
+    // ── Phone OTP (WhatsApp) ─────────────────────────────────
+    Credentials({
+      id:   "phone-otp",
+      name: "Phone OTP",
+      credentials: { token: { label: "Token", type: "text" } },
+      async authorize(credentials) {
+        const token = (credentials?.token as string | undefined)?.trim();
+        if (!token) return null;
+
+        // Look up userId from Redis one-time token
+        const userId = await redis.get<string>(`phone-signin:${token}`);
+        if (!userId) return null;
+
+        // Consume the token — single use
+        await redis.del(`phone-signin:${token}`);
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return null;
+
+        return {
+          id:            user.id,
+          name:          user.name,
+          email:         user.email,
+          image:         user.image,
+          emailVerified: user.emailVerified,
+          isBuyer:       user.isBuyer,
+          isSeller:      user.isSeller,
+          isFreelancer:  user.isFreelancer,
+        };
+      },
+    }),
   ],
 
   // ── Callbacks ──────────────────────────────────────────────
@@ -69,11 +116,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Stamp custom fields from DB onto the JWT token
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        // Initial sign-in — stamp fields from authorize()
+        token.id            = user.id;
         token.emailVerified = (user as any).emailVerified ?? null;
-        token.isBuyer = (user as any).isBuyer ?? true;
-        token.isSeller = (user as any).isSeller ?? false;
-        token.isFreelancer = (user as any).isFreelancer ?? false;
+        token.isBuyer       = (user as any).isBuyer       ?? true;
+        token.isSeller      = (user as any).isSeller      ?? false;
+        token.isFreelancer  = (user as any).isFreelancer  ?? false;
+      } else if (token.id) {
+        // Subsequent requests — re-fetch roles from DB so role activation
+        // (activateRoleAction) is reflected immediately without re-login
+        const dbUser = await prisma.user.findUnique({
+          where:  { id: token.id as string },
+          select: { isBuyer: true, isSeller: true, isFreelancer: true },
+        });
+        if (dbUser) {
+          token.isBuyer      = dbUser.isBuyer;
+          token.isSeller     = dbUser.isSeller;
+          token.isFreelancer = dbUser.isFreelancer;
+        }
       }
       return token;
     },

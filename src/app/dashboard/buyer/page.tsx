@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 import {
   ShoppingBag,
   Package,
@@ -12,80 +13,83 @@ import {
   Search,
   Briefcase,
   MessageSquare,
-  Sparkles,
-  TrendingUp,
 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Buyer Overview" };
 
 export default async function BuyerDashboard() {
   const session = await auth();
+  const userId  = session!.user.id;
   const name    = session?.user?.name?.split(" ")[0] ?? "there";
 
-  // Checklist — item 0 is always done (account created)
+  // Real data queries — fall back to zeros if DB is unreachable
+  let activeOrders    = 0;
+  let deliveredOrders = 0;
+  let savedCount      = 0;
+  let user: { name: string | null; image: string | null; location: string | null } | null = null;
+  let hasReview:   { id: string } | null = null;
+  let hasPurchase: { id: string } | null = null;
+
+  try {
+    [activeOrders, deliveredOrders, savedCount, user, hasReview, hasPurchase] = await Promise.all([
+      prisma.order.count({ where: { buyerId: userId, status: { in: ["PENDING", "IN_PROGRESS", "SHIPPED"] } } }),
+      prisma.order.count({ where: { buyerId: userId, status: { in: ["DELIVERED", "COMPLETED"] } } }),
+      prisma.savedItem.count({ where: { userId } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true, image: true, location: true } }),
+      prisma.review.findFirst({ where: { reviewerId: userId }, select: { id: true } }),
+      prisma.order.findFirst({ where: { buyerId: userId, status: { in: ["DELIVERED", "COMPLETED"] } }, select: { id: true } }),
+    ]);
+  } catch {
+    // DB temporarily unreachable — page renders with default/zero values
+  }
+
+  const profileComplete = !!(user?.name && user?.image && user?.location);
+
+  // Checklist — real DB checks
   const checklist = [
-    { label: "Create your Exhubb account",     done: true,  href: null                              },
-    { label: "Complete your profile",          done: false, href: "/dashboard/settings/profile"    },
-    { label: "Save your first item",           done: false, href: "/"                               },
-    { label: "Make your first purchase",       done: false, href: "/"                               },
-    { label: "Leave a seller review",          done: false, href: "/dashboard/buyer/orders"         },
+    { label: "Create your Exhubb account", done: true,                href: null                           },
+    { label: "Complete your profile",      done: profileComplete,     href: "/dashboard/settings/profile"  },
+    { label: "Save your first item",       done: savedCount > 0,      href: "/"                            },
+    { label: "Make your first purchase",   done: !!hasPurchase,       href: "/"                            },
+    { label: "Leave a seller review",      done: !!hasReview,         href: "/dashboard/buyer/orders"      },
   ];
   const completed = checklist.filter((c) => c.done).length;
-  const progress  = Math.round((completed / checklist.length) * 100);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl mx-auto space-y-6">
 
-      {/* ── Welcome Banner ──────────────────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#061a0e] via-primary-900 to-[#0a2a15] p-6 sm:p-8">
-        {/* Decorative bg */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_0%_50%,rgba(34,197,94,0.18)_0%,transparent_70%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_100%_50%,rgba(234,179,8,0.08)_0%,transparent_70%)] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-48 h-48 bg-primary-500/5 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-primary-400 text-sm font-semibold mb-1 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Buyer Dashboard
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
-              Welcome back, {name}! 👋
-            </h2>
-            <p className="text-gray-400 text-sm max-w-md">
-              Shop millions of products and hire world-class freelancers — all in one place.
-            </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-primary-900/40"
-            >
-              <Search className="w-4 h-4" />
-              Shop Now
-            </Link>
-          </div>
+      {/* ── Page header ─────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Buyer Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Welcome back, {name}. Here&apos;s your account overview.
+          </p>
         </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700"
+        >
+          <Search className="w-4 h-4" />
+          Browse Products
+        </Link>
       </div>
 
-      {/* ── Stats Row ────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI Cards ───────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Active Orders",  value: "0", icon: ShoppingBag, bg: "bg-blue-50",   iconCls: "text-blue-600",  desc: "In progress"      },
-          { label: "Total Delivered",value: "0", icon: Package,     bg: "bg-green-50",  iconCls: "text-green-600", desc: "All time"          },
-          { label: "Watchlist",      value: "0", icon: Heart,       bg: "bg-red-50",    iconCls: "text-red-500",   desc: "Tracking prices"   },
-          { label: "Saved Items",    value: "0", icon: Bookmark,    bg: "bg-amber-50",  iconCls: "text-amber-600", desc: "Bookmarked"        },
-        ].map(({ label, value, icon: Icon, bg, iconCls, desc }) => (
-          <div
-            key={label}
-            className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 hover:shadow-md hover:border-gray-200 transition-all"
-          >
-            <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3`}>
-              <Icon className={`w-5 h-5 ${iconCls}`} />
+          { label: "Active Orders",    value: String(activeOrders),    sub: "In progress",    icon: ShoppingBag },
+          { label: "Total Delivered",  value: String(deliveredOrders), sub: "All time",       icon: Package     },
+          { label: "Watchlist",        value: "0",                     sub: "Tracking prices",icon: Heart       },
+          { label: "Saved Items",      value: String(savedCount),      sub: "Bookmarked",     icon: Bookmark    },
+        ].map(({ label, value, sub, icon: Icon }) => (
+          <div key={label} className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-gray-500">{label}</span>
+              <Icon className="w-4 h-4 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-gray-900">{value}</p>
-            <p className="text-sm font-semibold text-gray-700 mt-0.5">{label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">{value}</p>
+            <p className="text-xs text-gray-400 mt-1">{sub}</p>
           </div>
         ))}
       </div>
@@ -93,146 +97,124 @@ export default async function BuyerDashboard() {
       {/* ── Main Two-column grid ─────────────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-6">
 
-        {/* ── Quick Actions (2/3) ──────────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* ── Left 2/3 ──────────────────────────────────────── */}
+        <div className="lg:col-span-2 space-y-6">
 
-          {/* Quick action cards */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">
-              Quick Actions
-            </h3>
-            <div className="grid sm:grid-cols-3 gap-3">
-              {[
-                { label: "Browse Products",   href: "/",  icon: ShoppingBag, color: "from-blue-500 to-blue-600",    desc: "Shop millions of products"      },
-                { label: "Hire Talent",       href: "/",  icon: Briefcase,   color: "from-primary-500 to-primary-700", desc: "Find world-class freelancers"  },
-                { label: "Your Messages",     href: "/dashboard/buyer/messages", icon: MessageSquare, color: "from-purple-500 to-purple-600", desc: "Talk to sellers"  },
-              ].map(({ label, href, icon: Icon, color, desc }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  className="group flex flex-col gap-3 p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all"
-                >
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-sm`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 group-hover:text-primary-700 transition-colors">
-                      {label}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent orders — empty state */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                Recent Orders
-              </h3>
+          {/* Recent Orders */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">Recent Orders</h2>
               <Link
                 href="/dashboard/buyer/orders"
-                className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1"
               >
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-                <ShoppingBag className="w-7 h-7 text-gray-300" />
-              </div>
-              <p className="text-sm font-semibold text-gray-500 mb-1">No orders yet</p>
-              <p className="text-xs text-gray-400 mb-4 max-w-xs">
+            <div className="px-5 py-12 text-center">
+              <ShoppingBag className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm font-medium text-gray-500">No orders yet</p>
+              <p className="text-xs text-gray-400 mt-1">
                 Your orders will appear here once you start shopping.
               </p>
               <Link
                 href="/"
-                className="flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900"
               >
-                Start shopping <ArrowRight className="w-3 h-3" />
+                Browse products <ArrowRight className="w-3 h-3" />
               </Link>
+            </div>
+          </div>
+
+          {/* Quick Access */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">Quick Access</h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {[
+                { label: "Browse Products",  href: "/products",                icon: ShoppingBag,   desc: "Shop millions of products"     },
+                { label: "Hire Freelancers", href: "/gigs",                    icon: Briefcase,     desc: "Find world-class talent"        },
+                { label: "My Orders",        href: "/dashboard/buyer/orders",  icon: Package,       desc: "Track and manage orders"        },
+                { label: "Saved Items",      href: "/dashboard/buyer/saved",   icon: Bookmark,      desc: "Items you bookmarked"           },
+                { label: "Messages",         href: "/dashboard/buyer/messages",icon: MessageSquare, desc: "Conversations with sellers"     },
+              ].map(({ label, href, icon: Icon, desc }) => (
+                <Link key={label} href={href} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 group">
+                  <span className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 text-gray-400" />
+                    <span>
+                      <span className="block text-sm text-gray-700 group-hover:text-gray-900">{label}</span>
+                      <span className="block text-xs text-gray-400">{desc}</span>
+                    </span>
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500" />
+                </Link>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* ── Right column ─────────────────────────────────── */}
-        <div className="space-y-4">
+        {/* ── Right column ──────────────────────────────────── */}
+        <div className="space-y-6">
 
-          {/* Getting started checklist */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                Getting Started
-              </h3>
-              <span className="text-xs font-bold text-primary-600">
-                {completed}/{checklist.length}
-              </span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-1.5 bg-gray-100 rounded-full mb-4 mt-2">
-              <div
-                className="h-full bg-primary-500 rounded-full transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <ul className="space-y-2.5">
-              {checklist.map(({ label, done, href }) => (
-                <li key={label}>
-                  {href && !done ? (
-                    <Link
-                      href={href}
-                      className="flex items-start gap-2.5 group"
-                    >
-                      <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5 group-hover:text-primary-400 transition-colors" />
-                      <span className="text-sm text-gray-500 group-hover:text-primary-600 transition-colors">
+          {/* Setup checklist */}
+          {completed < checklist.length && (
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-900">Setup Checklist</h2>
+                <span className="text-xs text-gray-400">{completed} / {checklist.length}</span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {checklist.map(({ label, done, href }) => (
+                  <div key={label} className="flex items-start gap-3">
+                    {done ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                    )}
+                    {href && !done ? (
+                      <Link href={href} className="text-sm text-gray-600 hover:text-gray-900 hover:underline">
+                        {label}
+                      </Link>
+                    ) : (
+                      <span className={`text-sm ${done ? "text-gray-400 line-through" : "text-gray-600"}`}>
                         {label}
                       </span>
-                    </Link>
-                  ) : (
-                    <div className="flex items-start gap-2.5">
-                      <CheckCircle2
-                        className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                          done ? "text-primary-500" : "text-gray-300"
-                        }`}
-                      />
-                      <span
-                        className={`text-sm ${
-                          done ? "text-gray-400 line-through" : "text-gray-500"
-                        }`}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Trend tip */}
-          <div className="rounded-2xl bg-gradient-to-br from-gold-50 to-amber-50 border border-gold-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-gold-600" />
-              <p className="text-xs font-bold text-gold-700 uppercase tracking-widest">
-                Trending Now
-              </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-sm font-semibold text-gray-800 mb-1">
-              Electronics are 20% off this week
+          )}
+
+          {/* Become a seller */}
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">Want to sell on Exhubb?</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              List products or offer services and start earning. No listing fees to get started.
             </p>
-            <p className="text-xs text-gray-500 mb-3">
-              Limited-time deals on top brands. Shop before they&rsquo;re gone.
-            </p>
-            <Link
-              href="/"
-              className="text-xs font-bold text-gold-700 hover:text-gold-800 flex items-center gap-1"
-            >
-              Explore deals <ArrowRight className="w-3 h-3" />
-            </Link>
+            <div className="space-y-2">
+              <Link
+                href="/dashboard/seller"
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 group"
+              >
+                <span className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-700">Sell products</span>
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500" />
+              </Link>
+              <Link
+                href="/dashboard/freelancer"
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 group"
+              >
+                <span className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-700">Offer services</span>
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

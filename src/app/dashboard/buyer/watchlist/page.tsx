@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { removeWatchlistItemAction } from "@/lib/actions/wishlist";
 import {
   Heart,
   ShoppingBag,
@@ -109,7 +110,8 @@ export default async function WatchlistPage() {
                   </div>
                 )}
                 {/* Remove button */}
-                <form className="absolute top-2 right-2">
+                <form action={removeWatchlistItemAction} className="absolute top-2 right-2">
+                  <input type="hidden" name="productId" value={product.id} />
                   <button
                     type="submit"
                     className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors"
@@ -135,7 +137,7 @@ export default async function WatchlistPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lg font-black text-gray-900">
-                      ${product.price.toFixed(2)}
+                      ₦{product.price.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-400 flex items-center gap-1">
                       <TrendingDown className="w-3 h-3" />

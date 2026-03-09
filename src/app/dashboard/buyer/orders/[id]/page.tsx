@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import BuyerOrderActions from "./BuyerOrderActions";
+import { sendOrderMessageAction } from "@/lib/actions/messages";
 import {
   ArrowLeft,
   Package,
@@ -16,7 +18,9 @@ import {
   MapPin,
   CreditCard,
   AlertTriangle,
+  ExternalLink,
   Download,
+  Zap,
 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Order Details" };
@@ -55,7 +59,7 @@ export default async function OrderDetailPage({
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
-      product:  { select: { title: true, images: true, category: true, description: true } },
+      product:  { select: { title: true, images: true, category: true, description: true, productType: true, digitalFileNames: true } },
       gig:      { select: { title: true, category: true, description: true } },
       seller:   { select: { id: true, name: true, image: true, email: true } },
       conversation: { include: { messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { id: true, name: true } } } } } },
@@ -68,8 +72,11 @@ export default async function OrderDetailPage({
   const category  = order.product?.category ?? order.gig?.category ?? "";
   const thumb     = order.product?.images?.[0];
   const desc      = order.product?.description ?? order.gig?.description ?? "";
+  const isDigital = order.product?.productType === "DIGITAL";
   const statusIdx = STATUS_ORDER.indexOf(order.status);
   const isCancelled = ["CANCELLED", "REFUNDED", "DISPUTED"].includes(order.status);
+  const platformFee = order.amount * 0.05;
+  const shippingFee = order.shippingFee ?? 0;
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-5xl mx-auto space-y-6">
@@ -116,11 +123,70 @@ export default async function OrderDetailPage({
               {desc && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{desc}</p>}
               <div className="flex items-center gap-4 mt-3">
                 <span className="text-xs text-gray-500">Qty: <strong>{order.quantity}</strong></span>
-                <span className="text-xs text-gray-500">Total: <strong className="text-gray-900">${order.amount.toFixed(2)}</strong></span>
-                <span className="text-xs text-gray-500">{order.type === "PRODUCT" ? "Physical Product" : "Digital Service"}</span>
+                <span className="text-xs text-gray-500">Total: <strong className="text-gray-900">₦{order.amount.toLocaleString()}</strong></span>
+                <span className="text-xs text-gray-500">{order.type === "PRODUCT" ? (isDigital ? "Digital Product" : "Physical Product") : "Digital Service"}</span>
               </div>
             </div>
           </div>
+
+          {/* Digital Download Card */}
+          {isDigital && order.downloadToken && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
+              <h3 className="text-sm font-bold text-indigo-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4" /> Digital Download
+              </h3>
+              {order.product?.digitalFileNames && order.product.digitalFileNames.length > 0 && (
+                <ul className="text-xs text-gray-600 mb-3 space-y-1 list-disc list-inside">
+                  {order.product.digitalFileNames.map((name, i) => (
+                    <li key={i}>{name}</li>
+                  ))}
+                </ul>
+              )}
+              <a
+                href={`/api/download/${order.downloadToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-colors"
+              >
+                <Download className="w-4 h-4" /> Download Your Files
+              </a>
+              <p className="text-xs text-indigo-600 mt-2">
+                Download count: {order.downloadCount ?? 0}
+              </p>
+            </div>
+          )}
+
+          {/* Tracking info */}
+          {order.trackingNumber && (
+            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5">
+              <h3 className="text-sm font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Truck className="w-4 h-4" /> Tracking Info
+              </h3>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Courier</span>
+                  <span className="font-semibold">{order.courierName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Tracking #</span>
+                  <span className="font-mono font-bold">{order.trackingNumber}</span>
+                </div>
+                {order.estimatedDays && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Est. Delivery</span>
+                    <span className="font-semibold">{order.estimatedDays} day{order.estimatedDays > 1 ? "s" : ""}</span>
+                  </div>
+                )}
+              </div>
+              {order.trackingUrl && (
+                <a href={order.trackingUrl} target="_blank" rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold rounded-xl transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Track Package
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Order Timeline */}
           {!isCancelled && (
@@ -179,6 +245,15 @@ export default async function OrderDetailPage({
             </div>
           )}
 
+          {/* Buyer Actions (confirm receipt, review, dispute) */}
+          <BuyerOrderActions
+            orderId={order.id}
+            productId={order.productId ?? null}
+            status={order.status}
+            sellerName={order.seller.name ?? "Seller"}
+            refundStatus={order.refundStatus}
+          />
+
           {/* Messages section */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-4">
@@ -218,8 +293,9 @@ export default async function OrderDetailPage({
               </div>
             )}
 
-            {/* Message input — client form */}
-            <form className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            {/* Message input */}
+            <form action={sendOrderMessageAction} className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+              <input type="hidden" name="orderId" value={order.id} />
               <input
                 name="message"
                 placeholder={`Message ${order.seller.name ?? "seller"}…`}
@@ -246,15 +322,21 @@ export default async function OrderDetailPage({
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal</span>
-                <span className="font-semibold">${order.amount.toFixed(2)}</span>
+                <span className="font-semibold">₦{order.amount.toLocaleString()}</span>
               </div>
+              {shippingFee > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Shipping</span>
+                  <span className="font-semibold">₦{shippingFee.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-gray-500">Qty</span>
-                <span className="font-semibold">{order.quantity}</span>
+                <span className="text-gray-500">Platform fee (5%)</span>
+                <span className="font-semibold text-gray-400">₦{platformFee.toLocaleString()}</span>
               </div>
               <div className="pt-2 border-t border-gray-100 flex justify-between">
                 <span className="font-bold text-gray-900">Total</span>
-                <span className="font-black text-gray-900">${order.amount.toFixed(2)}</span>
+                <span className="font-black text-gray-900">₦{(order.amount + shippingFee).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -282,30 +364,15 @@ export default async function OrderDetailPage({
           {/* Actions */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
-              Actions
+              Quick Links
             </h3>
-            <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-100 transition-colors">
-              <Download className="w-4 h-4 text-gray-400" />
-              Download Invoice
-            </button>
-            {order.status === "DELIVERED" && (
-              <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-100 transition-colors">
-                <CheckCircle2 className="w-4 h-4" />
-                Mark as Completed
-              </button>
-            )}
-            {["PENDING", "CONFIRMED"].includes(order.status) && (
-              <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 border border-red-100 transition-colors">
-                <XCircle className="w-4 h-4" />
-                Cancel Order
-              </button>
-            )}
-            {order.status === "COMPLETED" && (
-              <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-100 transition-colors">
-                <AlertTriangle className="w-4 h-4 text-gray-400" />
-                Report Issue
-              </button>
-            )}
+            <Link
+              href={order.productId ? `/products/${order.productId}` : "/products"}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-100 transition-colors"
+            >
+              <Package className="w-4 h-4 text-gray-400" />
+              View Product
+            </Link>
           </div>
 
           {/* Payment */}
@@ -317,17 +384,24 @@ export default async function OrderDetailPage({
             </div>
           </div>
 
-          {/* Delivery address placeholder */}
+          {/* Delivery address */}
           <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 flex items-start gap-3">
             <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-gray-700">Delivery Address</p>
-              <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
-                No address on file.{" "}
-                <Link href="/dashboard/settings/profile" className="text-primary-600 hover:underline">
-                  Add address →
-                </Link>
-              </p>
+              {order.shippingAddress ? (
+                <div className="text-xs text-gray-500 mt-0.5 leading-relaxed space-y-0.5">
+                  <p className="font-semibold text-gray-700">{order.shippingName}</p>
+                  {order.shippingPhone && <p>{order.shippingPhone}</p>}
+                  <p>{order.shippingAddress}</p>
+                  <p>{[order.shippingCity, order.shippingState, order.shippingCountry].filter(Boolean).join(", ")}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  No address on file.{" "}
+                  <Link href="/dashboard/settings/profile" className="text-primary-600 hover:underline">Add address →</Link>
+                </p>
+              )}
             </div>
           </div>
         </div>

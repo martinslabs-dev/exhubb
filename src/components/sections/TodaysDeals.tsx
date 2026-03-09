@@ -125,7 +125,7 @@ export default function TodaysDeals() {
                 <Digit value={time.s} />
               </div>
             </div>
-            <a href="#" className="arrow-link hidden sm:flex text-sm font-semibold text-primary-700 hover:text-primary-600">
+            <a href="/products" className="arrow-link hidden sm:flex text-sm font-semibold text-primary-700 hover:text-primary-600">
               See All <ArrowRight className="arrow w-4 h-4" />
             </a>
           </motion.div>
@@ -272,7 +272,7 @@ export default function TodaysDeals() {
 
         {/* Mobile see all */}
         <div className="mt-6 text-center sm:hidden">
-          <a href="#" className="text-sm font-semibold text-primary-700 underline underline-offset-2">
+          <a href="/products" className="text-sm font-semibold text-primary-700 underline underline-offset-2">
             See All Deals →
           </a>
         </div>

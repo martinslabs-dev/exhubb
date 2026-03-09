@@ -11,9 +11,11 @@ import { sendVerificationEmail } from "@/lib/email";
 import { headers } from "next/headers";
 
 // ─── Types ────────────────────────────────────────────────────
-interface ActionResult {
+export interface ActionResult {
   error?: string;
   success?: string;
+  field?: string;        // which input triggered the error (for inline highlight)
+  lockedUntil?: number;  // ms timestamp — enables client countdown timer
 }
 
 // ─── signUpAction ─────────────────────────────────────────────
@@ -25,9 +27,16 @@ export async function signUpAction(
   const ip = headersList.get("x-forwarded-for") ?? "unknown";
 
   // 1. Rate limit by IP
-  const { success: notRateLimited } = await registerRatelimit.limit(ip);
-  if (!notRateLimited) {
-    return { error: "Too many registrations from this network. Try again in 1 hour." };
+  try {
+    const { success: notRateLimited } = await registerRatelimit.limit(ip);
+    if (!notRateLimited) {
+      return { error: "Too many registrations from this network. Try again in 1 hour." };
+    }
+  } catch {
+    // Redis down — skip rate limit in dev, block in prod
+    if (process.env.NODE_ENV === "production") {
+      return { error: "Service temporarily unavailable. Please try again." };
+    }
   }
 
   // 2. Zod validation
@@ -43,35 +52,43 @@ export async function signUpAction(
   }
   const { name, email, password, intent } = result.data;
 
-  // 4. Check duplicate email
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "An account with this email already exists. Sign in instead." };
+  let redirectUrl: string;
+
+  try {
+    // 4. Check duplicate email
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return { error: "An account with this email already exists. Sign in instead.", field: "email" };
+    }
+
+    // 5. Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // 6. Create user (emailVerified is null → unverified)
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        isBuyer: true,
+        isSeller: intent === "seller",
+        isFreelancer: intent === "freelancer",
+      },
+    });
+
+    // 7. Generate OTP and send verification email
+    const code = await createOtp(user.id, email, "EMAIL_VERIFICATION");
+    await sendVerificationEmail(email, name ?? "", code);
+
+    redirectUrl = `/verify-email?email=${encodeURIComponent(email)}`;
+  } catch (err) {
+    console.error("[signUpAction]", err);
+    return { error: "Could not create your account. Please try again in a moment." };
   }
 
-  // 5. Hash password
-  const hashedPassword = await bcrypt.hash(password, 12);
-
-  // 6. Create user (emailVerified is null → unverified)
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      isBuyer: true,
-      isSeller: intent === "seller",
-      isFreelancer: intent === "freelancer",
-    },
-  });
-
-  // 7. Generate OTP and send verification email
-  const code = await createOtp(user.id, email, "EMAIL_VERIFICATION");
-  await sendVerificationEmail(email, name ?? "", code);
-
-  // 8. Redirect to verify-email page — don't sign in yet
-  // Store email in cookie via search param so verify page knows who to verify
+  // 8. Redirect outside try/catch so NEXT_REDIRECT propagates
   const { redirect } = await import("next/navigation");
-  redirect(`/verify-email?email=${encodeURIComponent(email)}`);
+  redirect(redirectUrl);
 
   return {}; // unreachable
 }
@@ -86,9 +103,17 @@ export async function signInAction(
   const email = (formData.get("email") as string) ?? "";
 
   // 1. Rate limit by IP + email combined
-  const { success: notRateLimited, remaining } = await loginRatelimit.limit(`${ip}:${email}`);
-  if (!notRateLimited) {
-    return { error: "Too many login attempts. Try again in 15 minutes." };
+  let remaining = 5;
+  try {
+    const rl = await loginRatelimit.limit(`${ip}:${email}`);
+    if (!rl.success) {
+      return { error: "Too many login attempts. Try again in 15 minutes." };
+    }
+    remaining = rl.remaining;
+  } catch {
+    if (process.env.NODE_ENV === "production") {
+      return { error: "Service temporarily unavailable. Please try again." };
+    }
   }
 
   // 2. Zod validation
@@ -97,18 +122,25 @@ export async function signInAction(
     return { error: result.error.issues[0].message };
   }
 
-  // 4. Check if user is temporarily locked
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (user?.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {
-    const mins = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
-    return { error: `Account temporarily locked. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` };
+  // 3. Check lock status + email verification
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { email } });
+  } catch (err) {
+    console.error("[signInAction] DB lookup failed", err);
+    return { error: "Could not reach the database. Please try again in a moment." };
   }
 
-  // 5. Check email is verified
+  if (user?.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {
+    return { error: "account-locked", lockedUntil: user.lockedUntil.getTime() };
+  }
+
+  // 4. Check email is verified
   if (user && !user.emailVerified) {
-    // Resend OTP
-    const code = await createOtp(user.id, email, "EMAIL_VERIFICATION");
-    await sendVerificationEmail(email, user.name ?? "", code);
+    try {
+      const code = await createOtp(user.id, email, "EMAIL_VERIFICATION");
+      await sendVerificationEmail(email, user.name ?? "", code);
+    } catch { /* best-effort — log handled inside */ }
     const { redirect } = await import("next/navigation");
     redirect(`/verify-email?email=${encodeURIComponent(email)}&resent=1`);
   }
@@ -125,10 +157,12 @@ export async function signInAction(
     if (error instanceof AuthError) {
       // Lock account after only 1 remaining attempt
       if (remaining <= 1 && user) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { isLocked: true, lockedUntil: new Date(Date.now() + 15 * 60 * 1000) },
-        });
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isLocked: true, lockedUntil: new Date(Date.now() + 5 * 60 * 1000) },
+          });
+        } catch { /* non-critical */ }
       }
       switch (error.type) {
         case "CredentialsSignin":

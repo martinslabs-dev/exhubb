@@ -3,16 +3,31 @@
 import { useActionState, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Mail, AlertCircle, CheckCircle2, ArrowRight, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  Loader2, Mail, AlertCircle, CheckCircle2, ArrowRight, RefreshCw,
+} from "lucide-react";
 import { verifyEmailAction, resendOtpAction } from "@/lib/actions/otp";
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+const itemVariants: Variants = {
+  hidden:  { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: "easeOut" } },
+};
+const shakeVariants: Variants = {
+  shake: { x: [0, -10, 10, -8, 8, -4, 0], transition: { duration: 0.45 } },
+};
 
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
+  const email  = searchParams.get("email")  ?? "";
   const resent = searchParams.get("resent") === "1";
 
   const [verifyState, verifyAction, verifyPending] = useActionState(verifyEmailAction, null);
-  const [resendState, resendAction, resendPending] = useActionState(resendOtpAction, null);
+  const [resendState, resendAction, resendPending]  = useActionState(resendOtpAction, null);
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
 
   function handleDigit(index: number, value: string) {
@@ -20,16 +35,14 @@ function VerifyEmailForm() {
     const next = [...digits];
     next[index] = value;
     setDigits(next);
-    // Auto-focus next box
     if (value && index < 5) {
-      const el = document.getElementById(`otp-${index + 1}`);
-      el?.focus();
+      document.getElementById(`otp-e-${index + 1}`)?.focus();
     }
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace" && !digits[index] && index > 0) {
-      document.getElementById(`otp-${index - 1}`)?.focus();
+      document.getElementById(`otp-e-${index - 1}`)?.focus();
     }
   }
 
@@ -37,116 +50,150 @@ function VerifyEmailForm() {
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (pasted.length === 6) {
       setDigits(pasted.split(""));
-      document.getElementById("otp-5")?.focus();
+      document.getElementById("otp-e-5")?.focus();
     }
   }
 
   const code = digits.join("");
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-          <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
-            <Mail className="w-6 h-6 text-primary-600" />
-          </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Check your email</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            We sent a 6-digit code to{" "}
-            <span className="font-semibold text-gray-700">{email || "your email"}</span>
-          </p>
-        </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full"
+    >
+      {/* Icon */}
+      <motion.div
+        variants={itemVariants}
+        className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-5"
+      >
+        <motion.div
+          animate={{ rotate: [0, -8, 8, -4, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Mail className="w-7 h-7 text-primary-600" />
+        </motion.div>
+      </motion.div>
 
-        <div className="px-8 py-6 space-y-5">
-          {/* Resent banner */}
-          {(resent || resendState?.success) && (
-            <div className="flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+      {/* Heading */}
+      <motion.div variants={itemVariants} className="mb-6">
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Check your email</h1>
+        <p className="mt-1.5 text-sm text-gray-500">
+          We sent a 6-digit code to{" "}
+          <span className="font-semibold text-gray-800">{email || "your email"}</span>
+        </p>
+      </motion.div>
+
+      {/* Resent banner */}
+      <AnimatePresence>
+        {(resent || resendState?.success) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-5 overflow-hidden"
+          >
+            <div className="flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm">
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{resendState?.success ?? "A new code has been sent."}</span>
             </div>
-          )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Error */}
-          {verifyState?.error && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{verifyState.error}</span>
-            </div>
-          )}
+      {/* Error */}
+      <AnimatePresence>
+        {verifyState?.error && (
+          <motion.div
+            key="err"
+            variants={shakeVariants}
+            animate="shake"
+            initial={{ opacity: 0, y: -8 }}
+            className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"
+          >
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{verifyState.error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* OTP input boxes */}
-          <form action={verifyAction} className="space-y-5">
-            <input type="hidden" name="email" value={email} />
-            <input type="hidden" name="code" value={code} />
+      {/* OTP boxes */}
+      <form action={verifyAction} className="space-y-5">
+        <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="code"  value={code}  />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Enter verification code
-              </label>
-              <div className="flex gap-2.5" onPaste={handlePaste}>
-                {digits.map((d, i) => (
-                  <input
-                    key={i}
-                    id={`otp-${i}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={(e) => handleDigit(i, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(i, e)}
-                    className="w-full h-14 text-center text-xl font-bold rounded-xl border-2 border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-                    autoFocus={i === 0}
-                  />
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-gray-400">
-                Code expires in 15 minutes. Check your spam folder if you don&apos;t see it.
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={verifyPending || code.length < 6}
-              className="w-full h-11 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              {verifyPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>Verify email <ArrowRight className="w-4 h-4" /></>
-              )}
-            </button>
-          </form>
-
-          {/* Resend */}
-          <div className="text-center">
-            <p className="text-sm text-gray-500 mb-2">Didn&apos;t receive it?</p>
-            <form action={resendAction}>
-              <input type="hidden" name="email" value={email} />
-              <button
-                type="submit"
-                disabled={resendPending}
-                className="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 mx-auto transition-colors disabled:opacity-60"
-              >
-                {resendPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-3.5 h-3.5" />
-                )}
-                Resend code
-              </button>
-            </form>
+        <motion.div variants={itemVariants}>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Enter 6-digit code
+          </label>
+          <div className="flex gap-2 sm:gap-3" onPaste={handlePaste}>
+            {digits.map((d, i) => (
+              <motion.input
+                key={i}
+                id={`otp-e-${i}`}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={(e) => handleDigit(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                whileFocus={{ scale: 1.05, borderColor: "#16a34a" }}
+                className={`w-full h-14 text-center text-2xl font-black rounded-xl border-2 bg-white text-gray-900 outline-none transition-colors duration-100 ${
+                  d ? "border-primary-500 bg-primary-50" : "border-gray-200"
+                }`}
+                autoFocus={i === 0}
+              />
+            ))}
           </div>
-        </div>
+          <p className="mt-2.5 text-xs text-gray-400">
+            Code expires in 15 minutes. Check your spam folder if you don&apos;t see it.
+          </p>
+        </motion.div>
 
-        <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500">
-          Wrong email?{" "}
-          <Link href="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-            Start over
-          </Link>
-        </div>
-      </div>
-    </div>
+        <motion.div variants={itemVariants}>
+          <motion.button
+            type="submit"
+            disabled={verifyPending || code.length < 6}
+            whileHover={{ scale: verifyPending || code.length < 6 ? 1 : 1.015 }}
+            whileTap={{ scale: 0.97 }}
+            className="w-full h-12 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+          >
+            {verifyPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>Verify email <ArrowRight className="w-4 h-4" /></>
+            )}
+          </motion.button>
+        </motion.div>
+      </form>
+
+      {/* Resend */}
+      <motion.div variants={itemVariants} className="mt-5 text-center">
+        <p className="text-sm text-gray-400 mb-2">Didn&apos;t receive it?</p>
+        <form action={resendAction} className="inline">
+          <input type="hidden" name="email" value={email} />
+          <button
+            type="submit"
+            disabled={resendPending}
+            className="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 mx-auto transition-colors disabled:opacity-60"
+          >
+            {resendPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            Resend code
+          </button>
+        </form>
+      </motion.div>
+
+      <motion.div variants={itemVariants} className="mt-4 text-center">
+        <Link href="/register" className="text-xs text-gray-400 hover:text-gray-600 transition-colors underline underline-offset-2">
+          Wrong email? Start over
+        </Link>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -157,3 +204,4 @@ export default function VerifyEmailPage() {
     </Suspense>
   );
 }
+

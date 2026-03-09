@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import {
   Store,
   Package,
@@ -12,13 +13,23 @@ import {
   Circle,
   PlusCircle,
   MessageSquare,
-  Sparkles,
-  ShieldCheck,
-  TrendingUp,
   Star,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Seller Hub" };
+
+const STATUS_CONFIG = {
+  PENDING:     { label: "Pending",     color: "bg-yellow-100 text-yellow-700" },
+  CONFIRMED:   { label: "Confirmed",   color: "bg-blue-100 text-blue-700"     },
+  IN_PROGRESS: { label: "In Progress", color: "bg-indigo-100 text-indigo-700" },
+  SHIPPED:     { label: "Shipped",     color: "bg-purple-100 text-purple-700" },
+  DELIVERED:   { label: "Delivered",   color: "bg-green-100 text-green-700"   },
+  COMPLETED:   { label: "Completed",   color: "bg-green-100 text-green-700"   },
+  CANCELLED:   { label: "Cancelled",   color: "bg-red-100 text-red-600"       },
+  REFUNDED:    { label: "Refunded",    color: "bg-gray-100 text-gray-600"     },
+  DISPUTED:    { label: "Disputed",    color: "bg-orange-100 text-orange-700" },
+} as const;
 
 export default async function SellerDashboard() {
   const session = await auth();
@@ -28,220 +39,313 @@ export default async function SellerDashboard() {
     redirect("/dashboard/buyer");
   }
 
-  const name = session.user.name?.split(" ")[0] ?? "there";
+  const userId = session.user.id;
+  const name   = session.user.name?.split(" ")[0] ?? "there";
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  // ── Fetch live stats ────────────────────────────────────────
+  const [activeListings, queueCount, revenue30d, recentOrders, dbUser, ratingAgg] = await Promise.all([
+    prisma.product.count({ where: { sellerId: userId, isActive: true } }),
+    prisma.order.count({
+      where: { sellerId: userId, status: { in: ["PENDING", "CONFIRMED", "IN_PROGRESS", "SHIPPED"] } },
+    }),
+    prisma.order.aggregate({
+      where: { sellerId: userId, status: "COMPLETED", createdAt: { gte: thirtyDaysAgo } },
+      _sum: { amount: true },
+    }),
+    prisma.order.findMany({
+      where:   { sellerId: userId },
+      include: {
+        product: { select: { title: true, images: true } },
+        gig:     { select: { title: true } },
+        buyer:   { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.user.findUnique({
+      where:  { id: userId },
+      select: { bio: true, location: true },
+    }),
+    prisma.review.aggregate({
+      where: { product: { sellerId: userId } },
+      _avg:   { rating: true },
+      _count: { rating: true },
+    }),
+  ]);
+
+  const revenue     = revenue30d._sum.amount ?? 0;
+  const hasProfile  = !!(dbUser?.bio || dbUser?.location);
+  const hasListings = activeListings > 0;
+  const hasSale     = recentOrders.some((o) => o.status === "COMPLETED");
 
   const checklist = [
-    { label: "Create your account",             done: true,  href: null                               },
-    { label: "Complete your seller profile",    done: false, href: "/dashboard/settings/profile"     },
-    { label: "Create your first listing",       done: false, href: "/dashboard/seller/listings/new"  },
-    { label: "Set up your payout method",       done: false, href: "/dashboard/settings/payouts"     },
-    { label: "Make your first sale",            done: false, href: "/dashboard/seller/listings"       },
+    { label: "Create your account",          done: true,         href: null                               },
+    { label: "Complete your seller profile", done: hasProfile,   href: "/dashboard/settings/profile"     },
+    { label: "Create your first listing",    done: hasListings,  href: "/dashboard/seller/listings/new"  },
+    { label: "Set up your payout method",    done: false,        href: "/dashboard/settings/payouts"     },
+    { label: "Make your first sale",         done: hasSale,      href: "/dashboard/seller/listings"      },
   ];
   const completed = checklist.filter((c) => c.done).length;
   const progress  = Math.round((completed / checklist.length) * 100);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl mx-auto space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto">
 
-      {/* ── Welcome Banner ──────────────────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0a0a1a] via-[#0d1433] to-[#0a0a1a] p-6 sm:p-8">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_0%_50%,rgba(99,102,241,0.18)_0%,transparent_70%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_100%_50%,rgba(234,179,8,0.10)_0%,transparent_70%)] pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-indigo-400 text-sm font-semibold mb-1 flex items-center gap-1.5">
-              <Store className="w-3.5 h-3.5" />
-              Seller Hub
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
-              Your Store, {name} 🏪
-            </h2>
-            <p className="text-gray-400 text-sm max-w-md">
-              List your products, manage orders, and grow your business on Exhubb.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/seller/listings/new"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-colors shadow-lg shadow-indigo-900/40 flex-shrink-0"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Create Listing
-          </Link>
+      {/* ── Page header ─────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Seller Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Welcome back, {name}. Here&apos;s your store overview.
+          </p>
         </div>
+        <Link
+          href="/dashboard/seller/listings/new"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700"
+        >
+          <PlusCircle className="w-4 h-4" />
+          New Listing
+        </Link>
       </div>
 
-      {/* ── Stats Row ────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI Cards ───────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Revenue (30d)",     value: "$0",  icon: Wallet,    bg: "bg-green-50",  iconCls: "text-green-600",  desc: "Total earnings"     },
-          { label: "Orders Queue",      value: "0",   icon: Package,   bg: "bg-blue-50",   iconCls: "text-blue-600",   desc: "Awaiting shipment"  },
-          { label: "Active Listings",   value: "0",   icon: Store,     bg: "bg-indigo-50", iconCls: "text-indigo-600", desc: "Live products"       },
-          { label: "Seller Rating",     value: "—",   icon: Star,      bg: "bg-amber-50",  iconCls: "text-amber-500",  desc: "Average score"       },
-        ].map(({ label, value, icon: Icon, bg, iconCls, desc }) => (
-          <div
-            key={label}
-            className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 hover:shadow-md hover:border-gray-200 transition-all"
-          >
-            <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3`}>
-              <Icon className={`w-5 h-5 ${iconCls}`} />
+          {
+            label: "Revenue (30 days)",
+            value: `$${revenue.toFixed(2)}`,
+            sub: "Completed orders",
+            icon: Wallet,
+          },
+          {
+            label: "Orders in Queue",
+            value: String(queueCount),
+            sub: "Awaiting action",
+            icon: Package,
+          },
+          {
+            label: "Active Listings",
+            value: String(activeListings),
+            sub: "Published products",
+            icon: Store,
+          },
+          {
+            label: "Avg. Rating",
+            value: ratingAgg._count.rating > 0
+              ? ratingAgg._avg.rating!.toFixed(1)
+              : "—",
+            sub: ratingAgg._count.rating > 0
+              ? `${ratingAgg._count.rating} review${ratingAgg._count.rating !== 1 ? "s" : ""}`
+              : "No reviews yet",
+            icon: Star,
+          },
+        ].map(({ label, value, sub, icon: Icon }) => (
+          <div key={label} className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-gray-500">{label}</span>
+              <Icon className="w-4 h-4 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-gray-900">{value}</p>
-            <p className="text-sm font-semibold text-gray-700 mt-0.5">{label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+            <p className="text-2xl font-bold text-gray-900 tabular-nums">{value}</p>
+            <p className="text-xs text-gray-400 mt-1">{sub}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Revenue chart placeholder + grid ─────────────────── */}
+      {/* ── Main Grid ─────────────────────────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-6">
 
-        {/* ── Left 2/3 ─────────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* ── Left 2/3 ──────────────────────────────────────── */}
+        <div className="lg:col-span-2 space-y-6">
 
-          {/* Revenue chart placeholder */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                Revenue Overview
-              </h3>
-              <div className="flex items-center gap-1 text-xs text-gray-400 bg-gray-50 rounded-lg px-2.5 py-1.5 border border-gray-100">
-                <TrendingUp className="w-3 h-3" />
-                Last 30 days
-              </div>
-            </div>
-            {/* Chart empty state */}
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-                <BarChart2 className="w-7 h-7 text-gray-300" />
-              </div>
-              <p className="text-sm font-semibold text-gray-500 mb-1">No sales data yet</p>
-              <p className="text-xs text-gray-400 mb-4 max-w-xs">
-                Your revenue chart will populate once you start making sales.
-              </p>
-              <Link
-                href="/dashboard/seller/listings/new"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary-600 text-white text-xs font-bold hover:bg-primary-700 transition-colors"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                Create your first listing
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent orders empty state */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                Recent Orders
-              </h3>
+          {/* Recent Orders */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">Recent Orders</h2>
               <Link
                 href="/dashboard/seller/orders"
-                className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1"
               >
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-                <Package className="w-7 h-7 text-gray-300" />
+
+            {recentOrders.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <Package className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-500">No orders yet</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Orders will appear here once buyers purchase your listings.
+                </p>
               </div>
-              <p className="text-sm font-semibold text-gray-500 mb-1">No orders yet</p>
-              <p className="text-xs text-gray-400 max-w-xs">
-                Orders will appear here once buyers purchase your listings.
-              </p>
-            </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Product</th>
+                      <th className="text-left text-xs font-medium text-gray-400 px-3 py-3">Buyer</th>
+                      <th className="text-left text-xs font-medium text-gray-400 px-3 py-3">Amount</th>
+                      <th className="text-left text-xs font-medium text-gray-400 px-3 py-3">Status</th>
+                      <th className="px-5 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {recentOrders.map((order) => {
+                      const cfg   = STATUS_CONFIG[order.status];
+                      const title = order.product?.title ?? order.gig?.title ?? "Order";
+                      const thumb = order.product?.images?.[0];
+                      return (
+                        <tr key={order.id} className="hover:bg-gray-50">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                                {thumb
+                                  ? <img src={thumb} alt={title} className="w-full h-full object-cover" /> // eslint-disable-line
+                                  : <Package className="w-3.5 h-3.5 text-gray-300" />}
+                              </div>
+                              <span className="font-medium text-gray-800 truncate max-w-[160px]">{title}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-gray-500 whitespace-nowrap">
+                            {order.buyer.name ?? order.buyer.email}
+                          </td>
+                          <td className="px-3 py-3 font-medium text-gray-900 tabular-nums whitespace-nowrap">
+                            ${order.amount.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", cfg.color)}>
+                              {cfg.label}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <Link
+                              href={`/dashboard/seller/orders/${order.id}`}
+                              className="text-xs text-gray-400 hover:text-gray-700"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* ── Right column ─────────────────────────────────── */}
-        <div className="space-y-4">
-
-          {/* Checklist */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                Getting Started
-              </h3>
-              <span className="text-xs font-bold text-primary-600">
-                {completed}/{checklist.length}
+          {/* Account Performance */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">Account Performance</h2>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
+                Good Standing
               </span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full mb-4 mt-2">
-              <div
-                className="h-full bg-primary-500 rounded-full transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <ul className="space-y-2.5">
-              {checklist.map(({ label, done, href }) => (
-                <li key={label}>
-                  {href && !done ? (
-                    <Link href={href} className="flex items-start gap-2.5 group">
-                      <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5 group-hover:text-primary-400 transition-colors" />
-                      <span className="text-sm text-gray-500 group-hover:text-primary-600 transition-colors">
-                        {label}
-                      </span>
-                    </Link>
-                  ) : (
-                    <div className="flex items-start gap-2.5">
-                      <CheckCircle2
-                        className={`w-4 h-4 flex-shrink-0 mt-0.5 ${done ? "text-primary-500" : "text-gray-300"}`}
-                      />
-                      <span className={`text-sm ${done ? "text-gray-400 line-through" : "text-gray-500"}`}>
-                        {label}
-                      </span>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Account health */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck className="w-4 h-4 text-primary-600" />
-              <h3 className="text-sm font-bold text-gray-700">Account Health</h3>
-              <span className="ml-auto text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                Excellent
-              </span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full mb-3">
-              <div className="h-full w-full bg-gradient-to-r from-primary-500 to-green-400 rounded-full" />
-            </div>
-            <div className="space-y-1.5">
+            <div className="divide-y divide-gray-50">
               {[
-                { label: "Late shipments",   value: "0%",  ok: true },
-                { label: "Cancellation rate",value: "0%",  ok: true },
-                { label: "Defect rate",       value: "0%",  ok: true },
-              ].map(({ label, value, ok }) => (
-                <div key={label} className="flex items-center justify-between text-xs">
-                  <span className="text-gray-500">{label}</span>
-                  <span className={`font-bold ${ok ? "text-green-600" : "text-red-500"}`}>
-                    {value}
-                  </span>
+                { label: "Late shipment rate",   value: "0%",  threshold: "Target: &lt; 4%"  },
+                { label: "Order cancellation rate", value: "0%", threshold: "Target: &lt; 2.5%" },
+                { label: "Order defect rate",     value: "0%",  threshold: "Target: &lt; 1%"  },
+              ].map(({ label, value, threshold }) => (
+                <div key={label} className="flex items-center justify-between px-5 py-3">
+                  <div>
+                    <p className="text-sm text-gray-700">{label}</p>
+                    <p className="text-xs text-gray-400"
+                      dangerouslySetInnerHTML={{ __html: threshold }} />
+                  </div>
+                  <span className="text-sm font-semibold text-green-600 tabular-nums">{value}</span>
                 </div>
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Quick link to messages */}
-          <Link
-            href="/dashboard/seller/messages"
-            className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-4 hover:border-primary-200 hover:shadow-sm transition-all group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
-              <MessageSquare className="w-5 h-5 text-primary-600" />
+        {/* ── Right column ──────────────────────────────────── */}
+        <div className="space-y-6">
+
+          {/* Setup Checklist */}
+          {completed < checklist.length && (
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-900">Setup Checklist</h2>
+                <span className="text-xs text-gray-400">{completed} / {checklist.length}</span>
+              </div>
+              <div className="px-5 py-4 space-y-3">
+                {checklist.map(({ label, done, href }) => (
+                  <div key={label} className="flex items-start gap-3">
+                    {done ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                    )}
+                    {href && !done ? (
+                      <Link href={href} className="text-sm text-gray-600 hover:text-gray-900 hover:underline">
+                        {label}
+                      </Link>
+                    ) : (
+                      <span className={`text-sm ${done ? "text-gray-400 line-through" : "text-gray-600"}`}>
+                        {label}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-800 group-hover:text-primary-700 transition-colors">
-                Buyer Messages
+          )}
+
+          {/* Quick Links */}
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">Quick Actions</h2>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {[
+                { label: "Create a listing",    href: "/dashboard/seller/listings/new",  icon: PlusCircle   },
+                { label: "View all orders",     href: "/dashboard/seller/orders",         icon: Package      },
+                { label: "Manage store",        href: "/dashboard/seller/store",          icon: Store        },
+                { label: "Earnings",            href: "/dashboard/seller/earnings",       icon: Wallet       },
+                { label: "Analytics",           href: "/dashboard/seller/analytics",      icon: BarChart2    },
+                { label: "Messages",            href: "/dashboard/seller/messages",       icon: MessageSquare},
+              ].map(({ label, href, icon: Icon }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 group"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{label}</span>
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Ratings summary */}
+          {ratingAgg._count.rating > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-4 h-4 text-amber-400" />
+                <h2 className="text-sm font-semibold text-gray-900">Seller Rating</h2>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 tabular-nums mt-2">
+                {ratingAgg._avg.rating!.toFixed(1)}
+                <span className="text-sm font-normal text-gray-400"> / 5.0</span>
               </p>
-              <p className="text-xs text-gray-400">No unread messages</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Based on {ratingAgg._count.rating} review{ratingAgg._count.rating !== 1 ? "s" : ""}
+              </p>
+              <Link
+                href="/dashboard/seller/reviews"
+                className="mt-3 text-xs font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1"
+              >
+                View reviews <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 ml-auto flex-shrink-0 transition-colors" />
-          </Link>
+          )}
         </div>
       </div>
     </div>

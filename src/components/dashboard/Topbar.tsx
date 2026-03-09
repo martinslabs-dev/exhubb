@@ -29,6 +29,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/seller/listings":         "My Listings",
   "/dashboard/seller/listings/new":     "Create Listing",
   "/dashboard/seller/orders":           "Orders",
+  "/dashboard/seller/reviews":          "Reviews",
   "/dashboard/seller/analytics":        "Analytics",
   "/dashboard/seller/earnings":         "Earnings",
   "/dashboard/seller/messages":         "Messages",
@@ -38,11 +39,12 @@ const TITLES: Record<string, string> = {
   "/dashboard/freelancer/orders":       "Active Orders",
   "/dashboard/freelancer/analytics":    "Analytics",
   "/dashboard/freelancer/earnings":     "Earnings",
-  "/dashboard/freelancer/messages":     "Messages",
+  "/dashboard/freelancer/messages":     "Messages",  "/dashboard/wallet":                  "Wallet",
+  "/dashboard/notifications":            "Notifications",
   "/dashboard/settings":                "Settings",
   "/dashboard/settings/profile":        "Profile",
   "/dashboard/settings/security":       "Security",
-  "/dashboard/settings/notifications":  "Notifications",
+  "/dashboard/settings/notifications":  "Notification Preferences",
   "/dashboard/settings/payouts":        "Payouts",
 };
 
@@ -61,9 +63,13 @@ function getTitle(pathname: string) {
 // ─── Topbar ───────────────────────────────────────────────────
 export default function Topbar({
   user,
+  unreadMessages,
+  unreadNotifications,
   onMenuClick,
 }: {
   user: DashboardUser;
+  unreadMessages: number;
+  unreadNotifications: number;
   onMenuClick: () => void;
 }) {
   const pathname          = usePathname();
@@ -150,20 +156,26 @@ export default function Topbar({
           aria-label="Messages"
         >
           <MessageSquare className="w-5 h-5 text-gray-600" />
-          {/* Badge — will be real count in later phase */}
-          <span className="absolute top-1 right-1 w-4 h-4 bg-primary-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-            3
-          </span>
+          {unreadMessages > 0 && (
+            <span className="absolute top-1 right-1 min-w-[1rem] h-4 bg-primary-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 tabular-nums">
+              {unreadMessages > 99 ? "99+" : unreadMessages}
+            </span>
+          )}
         </Link>
 
         {/* Notifications */}
-        <button
+        <Link
+          href="/dashboard/notifications"
           className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors"
           aria-label="Notifications"
         >
           <Bell className="w-5 h-5 text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+          {unreadNotifications > 0 && (
+            <span className="absolute top-1 right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 tabular-nums">
+              {unreadNotifications > 99 ? "99+" : unreadNotifications}
+            </span>
+          )}
+        </Link>
 
         {/* Avatar + dropdown */}
         <div ref={avatarRef} className="relative ml-1">
@@ -171,8 +183,10 @@ export default function Topbar({
             onClick={() => setAvatarOpen((v) => !v)}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-gray-100 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white text-xs font-black flex-shrink-0">
-              {initials}
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+              {user.image
+                ? <img src={user.image} alt={user.name ?? ""} className="w-full h-full object-cover" />
+                : <span className="text-white text-xs font-black">{initials}</span>}
             </div>
             <span className="hidden sm:block text-sm font-semibold text-gray-700 max-w-[100px] truncate">
               {user.name?.split(" ")[0] ?? "User"}

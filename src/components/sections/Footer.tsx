@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import ExhubbLogo from "@/components/ExhubbLogo";
 import { Twitter, Instagram, Youtube, Linkedin, Github, Globe, ArrowUpRight, Apple, Play } from "lucide-react";
+import NewsletterForm from "./NewsletterForm";
 
 const LINKS = {
   Marketplace: [
@@ -46,7 +47,7 @@ export default function Footer() {
 
       <div className="container-wide relative z-10 pt-16 pb-8">
         {/* Top grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-14">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-14">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-4 lg:col-span-2">
             {/* Logo */}
@@ -148,24 +149,11 @@ export default function Footer() {
           viewport={{ once: true }}
           className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
         >
-          <div>
+          <div className="flex-shrink-0">
             <p className="text-white font-bold text-sm mb-0.5">Stay in the loop</p>
             <p className="text-gray-500 text-xs">Deals, product drops, and marketplace news in your inbox.</p>
           </div>
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <input
-              type="email"
-              placeholder="you@example.com"
-              className="flex-1 md:w-52 bg-white/[0.06] border border-white/[0.08] focus:border-primary-700/50 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 transition-colors"
-            />
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-            >
-              Subscribe
-            </motion.button>
-          </div>
+          <NewsletterForm />
         </motion.div>
 
         {/* Bottom bar */}
@@ -173,7 +161,7 @@ export default function Footer() {
           <p className="text-gray-600 text-xs">
             © {new Date().getFullYear()} Exhubb, Inc. All rights reserved.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {["Privacy Policy", "Terms of Service", "Cookie Policy", "Accessibility"].map((t) => (
               <a key={t} href="#" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">
                 {t}

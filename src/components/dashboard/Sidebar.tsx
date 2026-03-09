@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ExhubbLogo from "@/components/ExhubbLogo";
 import { signOutAction } from "@/lib/actions/auth";
+import { activateRoleAction } from "@/lib/actions/role";
 import type { DashboardUser } from "./DashboardShell";
 import {
   LayoutDashboard,
@@ -23,7 +24,10 @@ import {
   LogOut,
   X,
   ChevronRight,
-  Sparkles,
+  ArrowRight,
+  Bell,
+  Star,
+  Ticket,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -46,8 +50,11 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   seller: [
     { label: "Overview",   icon: LayoutDashboard, href: "/dashboard/seller" },
-    { label: "Listings",   icon: Store,           href: "/dashboard/seller/listings" },
+    { label: "My Store",   icon: Store,           href: "/dashboard/seller/store" },
+    { label: "Listings",   icon: Package,         href: "/dashboard/seller/listings" },
     { label: "Orders",     icon: Package,         href: "/dashboard/seller/orders" },
+    { label: "Reviews",    icon: Star,            href: "/dashboard/seller/reviews" },
+    { label: "Discounts",  icon: Ticket,          href: "/dashboard/seller/discounts" },
     { label: "Analytics",  icon: BarChart2,       href: "/dashboard/seller/analytics" },
     { label: "Earnings",   icon: Wallet,          href: "/dashboard/seller/earnings" },
     { label: "Messages",   icon: MessageSquare,   href: "/dashboard/seller/messages" },
@@ -62,11 +69,12 @@ const NAV: Record<Role, NavItem[]> = {
   ],
 };
 
-const ROLE_META = [
-  { id: "buyer"      as Role, label: "Buyer",      icon: ShoppingBag, desc: "Shop & order"     },
-  { id: "seller"     as Role, label: "Seller",     icon: Store,       desc: "Sell products"    },
-  { id: "freelancer" as Role, label: "Freelancer", icon: Briefcase,   desc: "Offer services"   },
-];
+// ─── Enabled role mode items ─────────────────────────────────
+const ENABLED_ROLES: Record<Role, { label: string; icon: React.ElementType }> = {
+  buyer:      { label: "Shopping",    icon: ShoppingBag },
+  seller:     { label: "Seller Hub",  icon: Store       },
+  freelancer: { label: "Freelancer",  icon: Briefcase   },
+};
 
 // ─── Sidebar ──────────────────────────────────────────────────
 export default function Sidebar({
@@ -119,41 +127,23 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* ── Role Switcher ─────────────────────────────────── */}
+      {/* ── Dashboard Mode Switcher ──────────────────────── */}
       <div className="px-3 pt-4 pb-3 border-b border-gray-100">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
-          Active Mode
+          Your Dashboards
         </p>
         <div className="space-y-0.5">
-          {ROLE_META.map(({ id, label, icon: Icon, desc }) => {
-            const enabled = hasRole(id);
-            const active  = activeRole === id;
-
-            if (!enabled) {
-              return (
-                <button
-                  key={id}
-                  onClick={() => router.push(`/register?intent=${id}`)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-gray-50 group"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-3.5 h-3.5 text-gray-400" />
-                    </span>
-                    <span className="text-gray-400 font-medium">{label}</span>
-                  </span>
-                  <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full group-hover:bg-primary-100 transition-colors flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5" />
-                    Activate
-                  </span>
-                </button>
-              );
-            }
-
+          {/* Always show buyer/shopping */}
+          {(["buyer", "seller", "freelancer"] as Role[]).map((roleId) => {
+            const meta    = ENABLED_ROLES[roleId];
+            const Icon    = meta.icon;
+            const enabled = hasRole(roleId);
+            const active  = activeRole === roleId;
+            if (!enabled) return null;
             return (
               <button
-                key={id}
-                onClick={() => handleRoleSwitch(id)}
+                key={roleId}
+                onClick={() => handleRoleSwitch(roleId)}
                 className={cn(
                   "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                   active
@@ -162,21 +152,59 @@ export default function Sidebar({
                 )}
               >
                 <span className="flex items-center gap-2.5">
-                  <span
-                    className={cn(
-                      "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
-                      active ? "bg-white/20" : "bg-gray-100"
-                    )}
-                  >
+                  <span className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+                    active ? "bg-white/20" : "bg-gray-100"
+                  )}>
                     <Icon className={cn("w-3.5 h-3.5", active ? "text-white" : "text-gray-500")} />
                   </span>
-                  <span>{label}</span>
+                  <span>{meta.label}</span>
                 </span>
                 {active && <ChevronRight className="w-3.5 h-3.5 text-white/70" />}
               </button>
             );
           })}
         </div>
+
+        {/* Upsell CTAs for non-activated roles */}
+        {(!user.isSeller || !user.isFreelancer) && (
+          <div className="mt-2 pt-2 border-t border-gray-50 space-y-0.5">
+            {!user.isSeller && (
+              <form action={activateRoleAction}>
+                <input type="hidden" name="role" value="seller" />
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors hover:bg-primary-50 group"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Store className="w-3.5 h-3.5 text-gray-400" />
+                    </span>
+                    <span className="text-gray-500 font-medium group-hover:text-primary-700">Become a Seller</span>
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 transition-colors" />
+                </button>
+              </form>
+            )}
+            {!user.isFreelancer && (
+              <form action={activateRoleAction}>
+                <input type="hidden" name="role" value="freelancer" />
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors hover:bg-primary-50 group"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+                    </span>
+                    <span className="text-gray-500 font-medium group-hover:text-primary-700">Offer Your Services</span>
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 transition-colors" />
+                </button>
+              </form>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Navigation ────────────────────────────────────── */}
@@ -220,8 +248,35 @@ export default function Sidebar({
         </ul>
       </nav>
 
-      {/* ── Bottom: Settings + Sign Out ───────────────────── */}
+      {/* ── Bottom: Shared + Settings + Sign Out ─────────── */}
       <div className="px-3 py-3 border-t border-gray-100 space-y-0.5">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-2">Account</p>
+        <Link
+          href="/dashboard/wallet"
+          onClick={onClose}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+            pathname.startsWith("/dashboard/wallet")
+              ? "bg-primary-50 text-primary-700"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          )}
+        >
+          <Wallet className="w-4 h-4 text-gray-400" />
+          <span>Wallet</span>
+        </Link>
+        <Link
+          href="/dashboard/notifications"
+          onClick={onClose}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+            pathname.startsWith("/dashboard/notifications")
+              ? "bg-primary-50 text-primary-700"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          )}
+        >
+          <Bell className="w-4 h-4 text-gray-400" />
+          <span>Notifications</span>
+        </Link>
         <Link
           href="/dashboard/settings"
           onClick={onClose}

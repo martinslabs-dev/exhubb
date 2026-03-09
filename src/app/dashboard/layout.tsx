@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export const metadata: Metadata = {
@@ -19,15 +20,33 @@ export default async function DashboardLayout({
     redirect("/login?callbackUrl=/dashboard");
   }
 
+  // Always read fresh from DB — roles, name, image and unread counts
+  const [dbUser, unreadMessages, unreadNotifications] = await Promise.all([
+    prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { name: true, image: true, isBuyer: true, isSeller: true, isFreelancer: true },
+    }),
+    prisma.message.count({
+      where: { conversation: { OR: [{ buyerId: session.user.id }, { sellerId: session.user.id }] }, senderId: { not: session.user.id }, isRead: false },
+    }),
+    prisma.notification.count({
+      where: { userId: session.user.id, isRead: false },
+    }),
+  ]);
+
   const user = {
     id:           session.user.id,
-    name:         session.user.name  ?? null,
-    email:        session.user.email ?? null,
-    image:        session.user.image ?? null,
-    isBuyer:      (session.user as any).isBuyer      ?? true,
-    isSeller:     (session.user as any).isSeller     ?? false,
-    isFreelancer: (session.user as any).isFreelancer ?? false,
+    name:         dbUser?.name         ?? session.user.name  ?? null,
+    email:        session.user.email   ?? null,
+    image:        dbUser?.image        ?? session.user.image ?? null,
+    isBuyer:      dbUser?.isBuyer      ?? true,
+    isSeller:     dbUser?.isSeller     ?? false,
+    isFreelancer: dbUser?.isFreelancer ?? false,
   };
 
-  return <DashboardShell user={user}>{children}</DashboardShell>;
+  return (
+    <DashboardShell user={user} unreadMessages={unreadMessages} unreadNotifications={unreadNotifications}>
+      {children}
+    </DashboardShell>
+  );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { sendMessageAction } from "@/lib/actions/messages";
 import {
   MessageSquare,
   Search,
@@ -227,7 +228,8 @@ export default async function BuyerMessagesPage({
 
             {/* Input */}
             <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
-              <form className="flex items-center gap-2">
+              <form action={sendMessageAction} className="flex items-center gap-2">
+                <input type="hidden" name="conversationId" value={active.id} />
                 <input
                   name="message"
                   placeholder="Type a message…"

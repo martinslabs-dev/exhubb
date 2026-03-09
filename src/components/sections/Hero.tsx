@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Search, Sparkles, ArrowRight, ShieldCheck, Globe, TrendingUp, ShoppingBag, Briefcase, type LucideIcon } from "lucide-react";
 import { cn, spring } from "@/lib/utils";
@@ -29,9 +30,16 @@ const trust = [
 type TabType = (typeof TABS)[number];
 
 export default function Hero() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("Products");
   const [searchVal,  setSearchVal] = useState("");
   const [phIndex,    setPhIndex]   = useState(0);
+
+  function handleSearch() {
+    const q = searchVal.trim();
+    const base = activeTab === "Products" ? "/products" : "/services";
+    router.push(q ? `${base}?q=${encodeURIComponent(q)}` : base);
+  }
   const containerRef               = useRef<HTMLDivElement>(null);
   const canvasRef                  = useRef<HTMLCanvasElement>(null);
 
@@ -236,6 +244,7 @@ export default function Hero() {
                 type="text"
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className="w-full px-4 py-3 bg-transparent text-white outline-none text-sm sm:text-base placeholder-transparent"
               />
               {!searchVal && (
@@ -254,6 +263,8 @@ export default function Hero() {
               )}
             </div>
             <motion.button
+              type="button"
+              onClick={handleSearch}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="m-2 flex items-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-semibold px-5 py-3 rounded-xl text-sm transition-colors shadow-lg shadow-primary-900/30"
@@ -285,7 +296,7 @@ export default function Hero() {
                 ).map((tag) => (
                   <motion.a
                     key={tag}
-                    href="#"
+                    href={activeTab === "Products" ? `/products?q=${encodeURIComponent(tag)}` : `/services?q=${encodeURIComponent(tag)}`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.97 }}
                     className="px-3 py-1 bg-white/5 hover:bg-primary-900/60 border border-white/10 hover:border-primary-700/50 rounded-full text-xs text-gray-400 hover:text-primary-300 transition-all"
@@ -308,7 +319,7 @@ export default function Hero() {
           <motion.a
             whileHover={{ scale: 1.04, boxShadow: "0 0 48px rgba(34,197,94,0.6)" }}
             whileTap={{ scale: 0.97 }}
-            href="/search"
+            href="/products"
             className="flex items-center gap-2.5 bg-primary-500 hover:bg-primary-400 text-white font-extrabold px-8 py-3 rounded-full text-sm ring-2 ring-primary-400/40 ring-offset-2 ring-offset-transparent shadow-[0_0_32px_rgba(34,197,94,0.35)] transition-all"
           >
             Start Shopping <ArrowRight className="w-4 h-4" />

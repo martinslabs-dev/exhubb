@@ -16,9 +16,13 @@ export interface DashboardUser {
 
 export default function DashboardShell({
   user,
+  unreadMessages,
+  unreadNotifications,
   children,
 }: {
   user: DashboardUser;
+  unreadMessages: number;
+  unreadNotifications: number;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,7 +44,7 @@ export default function DashboardShell({
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Topbar user={user} onMenuClick={() => setSidebarOpen(true)} />
+        <Topbar user={user} unreadMessages={unreadMessages} unreadNotifications={unreadNotifications} onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>

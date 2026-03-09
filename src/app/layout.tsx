@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
+import Providers from "@/components/providers/Providers";
 
 export const metadata: Metadata = {
   title: "Exhubb — Buy Products. Hire Talent. One Platform.",
@@ -30,9 +30,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[#061a0e] text-white">
-        <SmoothScrollProvider>
+        <Providers>
           {children}
-        </SmoothScrollProvider>
+        </Providers>
       </body>
     </html>
   );

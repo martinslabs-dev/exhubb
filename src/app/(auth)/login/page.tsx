@@ -1,291 +1,288 @@
 "use client";
 
-import { useActionState, Suspense } from "react";
+import { useActionState, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Mail, Phone, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  Eye, EyeOff, ArrowRight, Loader2, AlertCircle, Lock,
+} from "lucide-react";
 import { signInAction } from "@/lib/actions/auth";
 
-// ─── OAuth brand icons (inline SVG — no extra dep) ───────────
-function GoogleIcon() {
+// ── Framer Motion variants ────────────────────────────────────
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+const itemVariants: Variants = {
+  hidden:  { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
+
+// ── Floating-label input ──────────────────────────────────────
+function Field({
+  id, name, type, label, autoComplete, placeholder, extra,
+}: {
+  id: string; name: string; type: string; label: string;
+  autoComplete?: string; placeholder?: string;
+  extra?: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [value,   setValue]   = useState("");
+  const [show,    setShow]    = useState(false);
+  const isPassword = type === "password";
+  const inputType  = isPassword ? (show ? "text" : "password") : type;
+  const float      = focused || value.length > 0;
+
   return (
-    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#4285F4" d="M47.5 24.6c0-1.6-.1-3.1-.4-4.6H24v8.7h13.2c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.7-4.3 7.3-10.7 7.3-17.3z"/>
-      <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.9-6c-2.2 1.5-5 2.3-8.1 2.3-6.2 0-11.5-4.2-13.4-9.9H2.4v6.2C6.4 42.5 14.7 48 24 48z"/>
-      <path fill="#FBBC05" d="M10.6 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6v-6.2H2.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.6 2.4 10.8l8.2-6.2z"/>
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.8-6.8C35.9 2.4 30.4 0 24 0 14.7 0 6.4 5.5 2.4 13.2l8.2 6.2C12.5 13.7 17.8 9.5 24 9.5z"/>
-    </svg>
+    <motion.div variants={itemVariants}>
+      <div className="relative">
+        <motion.label
+          htmlFor={id}
+          animate={{
+            top:      float ? "8px"  : "50%",
+            fontSize: float ? "11px" : "14px",
+            color:    focused ? "#16a34a" : "#9ca3af",
+          }}
+          transition={{ duration: 0.18 }}
+          className="absolute left-4 -translate-y-1/2 pointer-events-none font-medium z-10 origin-left"
+          style={{ top: "50%", fontSize: "14px" }}
+        >
+          {label}
+        </motion.label>
+
+        <input
+          id={id}
+          name={name}
+          type={inputType}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={float ? (placeholder ?? "") : ""}
+          required
+          className={`w-full h-14 px-4 pt-5 pb-2 rounded-xl border-2 bg-white text-sm text-gray-900 outline-none transition-colors duration-150 ${
+            focused ? "border-primary-500 shadow-sm shadow-primary-100" : "border-gray-200 hover:border-gray-300"
+          } ${isPassword ? "pr-12" : ""}`}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label={show ? "Hide password" : "Show password"}
+            tabIndex={-1}
+          >
+            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+      {extra}
+    </motion.div>
   );
 }
-function FacebookIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.875 11.86V15.47H7.078V12h3.047v-2.64c0-3.007 1.79-4.668 4.533-4.668 1.312 0 2.686.234 2.686.234v2.953h-1.514c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.469h-2.796v8.39A12 12 0 0 0 24 12z"/>
-    </svg>
+// ── Account-lock countdown ────────────────────────────────────────────
+function LockCountdown({ lockedUntil }: { lockedUntil: number }) {
+  const [secs, setSecs] = useState(() =>
+    Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000))
   );
-}
-function XIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
-}
 
-function LoginForm() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const urlError = searchParams.get("error");
+  useEffect(() => {
+    const calc = () => Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000));
+    if (calc() === 0) return;
+    const id = setInterval(() => {
+      const next = calc();
+      setSecs(next);
+      if (next === 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
 
-  const [tab, setTab] = useState<"email" | "phone">("email");
-  const [showPassword, setShowPassword] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
-
-  const [state, formAction, isPending] = useActionState(signInAction, null);
-
-  async function handleOAuth(provider: string) {
-    setOauthLoading(provider);
-    await signIn(provider, { callbackUrl });
-  }
-
-  const errorMessage =
-    state?.error ??
-    (urlError === "CredentialsSignin" ? "Incorrect email or password." : urlError ?? null);
+  const min   = Math.floor(secs / 60);
+  const sec   = secs % 60;
+  const done  = secs === 0;
+  const total = 5 * 60; // 5-minute lock
 
   return (
-    <div className="w-full max-w-md">
-      {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-            Welcome back
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Sign in to your Exhubb account
+    <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
+            <Lock className="w-3.5 h-3.5 text-amber-600" />
+          </div>
+          <p className="text-sm font-bold text-amber-800">
+            {done ? "You can try signing in again." : "Account temporarily locked"}
           </p>
         </div>
 
-        <div className="px-8 py-6 space-y-5">
-          {/* Error banner */}
-          {errorMessage && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* OAuth buttons */}
-          <div className="space-y-2.5">
-            <button
-              type="button"
-              onClick={() => handleOAuth("google")}
-              disabled={!!oauthLoading}
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-            >
-              {oauthLoading === "google" ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
-              Continue with Google
-            </button>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleOAuth("facebook")}
-                disabled={!!oauthLoading}
-                className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-              >
-                {oauthLoading === "facebook" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FacebookIcon />}
-                Facebook
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOAuth("twitter")}
-                disabled={!!oauthLoading}
-                className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-              >
-                {oauthLoading === "twitter" ? <Loader2 className="w-4 h-4 animate-spin" /> : <XIcon />}
-                X (Twitter)
-              </button>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400 font-medium">
-                or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Email / Phone toggle */}
-          <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium">
-            <button
-              type="button"
-              onClick={() => setTab("email")}
-              className={`flex-1 h-9 flex items-center justify-center gap-1.5 transition-colors ${
-                tab === "email"
-                  ? "bg-primary-600 text-white"
-                  : "bg-white text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              Email
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("phone")}
-              className={`flex-1 h-9 flex items-center justify-center gap-1.5 transition-colors ${
-                tab === "phone"
-                  ? "bg-primary-600 text-white"
-                  : "bg-white text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              <Phone className="w-3.5 h-3.5" />
-              Phone
-            </button>
-          </div>
-
-          {/* Form */}
-          <form action={formAction} className="space-y-4">
-            {/* Pass callbackUrl so server action redirects correctly */}
-            <input type="hidden" name="callbackUrl" value={callbackUrl} />
-
-            {tab === "email" ? (
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+        {!done ? (
+          <>
+            <p className="text-xs text-amber-600 mb-3 ml-[2.375rem]">
+              Too many failed attempts. Try again in:
+            </p>
+            <div className="flex items-center gap-3 ml-[2.375rem]">
+              {/* MM:SS display */}
+              <div className="flex items-center bg-amber-100 rounded-lg px-3 py-1.5">
+                <span className="font-mono text-2xl font-black text-amber-800 tabular-nums">
+                  {String(min).padStart(2, "0")}
+                </span>
+                <span className="font-mono text-xl font-black text-amber-400 mx-1">:</span>
+                <span className="font-mono text-2xl font-black text-amber-800 tabular-nums">
+                  {String(sec).padStart(2, "0")}
+                </span>
+              </div>
+              {/* Draining progress bar */}
+              <div className="flex-1 h-2 bg-amber-200 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-amber-400 rounded-full"
+                  animate={{ width: `${(secs / total) * 100}%` }}
+                  transition={{ duration: 0.95, ease: "linear" }}
                 />
               </div>
-            ) : (
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Phone number
-                </label>
-                <div className="flex gap-2">
-                  <select className="h-11 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition shrink-0">
-                    <option>🇺🇸 +1</option>
-                    <option>🇬🇧 +44</option>
-                    <option>🇳🇬 +234</option>
-                    <option>🇿🇦 +27</option>
-                    <option>🇬🇭 +233</option>
-                    <option>🇰🇪 +254</option>
-                    <option>🇮🇳 +91</option>
-                  </select>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    required
-                    placeholder="800 000 0000"
-                    className="flex-1 h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  We&apos;ll send a one-time code to verify
-                </p>
-              </div>
-            )}
-
-            {tab === "email" && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Password
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    placeholder="Enter your password"
-                    className="w-full h-11 px-3.5 pr-11 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full h-11 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  {tab === "phone" ? "Send OTP" : "Sign in"}
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-          >
-            Create one free
-          </Link>
-        </div>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-amber-600 ml-[2.375rem]">
+            Reload the page or try signing in again below.
+          </p>
+        )}
       </div>
+    </div>
+  );
+}
+// ── Main form ─────────────────────────────────────────────────
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const callbackUrl  = searchParams.get("callbackUrl") || "/dashboard";
+  const urlError     = searchParams.get("error");
+  const verified     = searchParams.get("verified") === "1";
 
-      {/* Trust note */}
-      <p className="mt-4 text-center text-xs text-gray-400">
+  const [state, formAction, isPending] = useActionState(signInAction, null);
+
+  const lockedUntil = state?.lockedUntil ?? null;
+  const errorMessage =
+    (state?.error && state.error !== "account-locked")
+      ? state.error
+      : urlError === "CredentialsSignin" ? "Incorrect email or password." : null;
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full"
+    >
+      {/* Heading */}
+      <motion.div variants={itemVariants} className="mb-7">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-gray-500">Sign in to your Exhubb account</p>
+      </motion.div>
+
+      {/* Verified success banner */}
+      <AnimatePresence>
+        {verified && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-5 flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm overflow-hidden"
+          >
+            <span className="text-base">✓</span>
+            <span>Email verified! Sign in to continue.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lock countdown */}
+      <AnimatePresence>
+        {lockedUntil && (
+          <motion.div
+            key="lock"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <LockCountdown lockedUntil={lockedUntil} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error banner */}
+      <AnimatePresence>
+        {errorMessage && (
+          <motion.div
+            key="err"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0, x: [0, -10, 10, -8, 8, -4, 0] }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ opacity: { duration: 0.2 }, y: { duration: 0.2 } }}
+            className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"
+          >
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{errorMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Form */}
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
+
+        <Field
+          id="email" name="email" type="email" label="Email address"
+          autoComplete="email" placeholder="you@example.com"
+        />
+
+        <Field
+          id="password" name="password" type="password" label="Password"
+          autoComplete="current-password" placeholder="Your password"
+          extra={
+            <div className="mt-2 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          }
+        />
+
+        <motion.div variants={itemVariants} className="pt-1">
+          <motion.button
+            type="submit"
+            disabled={isPending}
+            whileHover={{ scale: isPending ? 1 : 1.015 }}
+            whileTap={{ scale: isPending ? 1 : 0.97 }}
+            className="w-full h-12 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
+          >
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>Sign in <ArrowRight className="w-4 h-4" /></>
+            )}
+          </motion.button>
+        </motion.div>
+      </form>
+
+      {/* Register link */}
+      <motion.div variants={itemVariants} className="mt-6 text-center text-sm text-gray-500">
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+          Create one free
+        </Link>
+      </motion.div>
+
+      <motion.p variants={itemVariants} className="mt-4 text-center text-xs text-gray-400">
         Protected by industry-standard encryption.{" "}
         <Link href="/privacy" className="underline hover:text-gray-600 transition-colors">
           Privacy policy
         </Link>
-      </p>
-    </div>
+      </motion.p>
+    </motion.div>
   );
 }
 
@@ -296,3 +293,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+

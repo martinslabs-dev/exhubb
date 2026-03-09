@@ -1,103 +1,129 @@
 "use client";
 
-import { useActionState, useState, Suspense } from "react";
+import { useActionState, useState, useTransition, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  Eye,
-  EyeOff,
-  Mail,
-  Phone,
-  ArrowRight,
-  Loader2,
-  ShoppingBag,
-  Package,
-  Briefcase,
-  Users,
-  Check,
-  AlertCircle,
+  Eye, EyeOff, ArrowRight, Loader2, AlertCircle, Check,
+  ShoppingBag, Package, Briefcase, Users,
 } from "lucide-react";
 import { signUpAction } from "@/lib/actions/auth";
 
-// ─── OAuth icons ─────────────────────────────────────────────
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#4285F4" d="M47.5 24.6c0-1.6-.1-3.1-.4-4.6H24v8.7h13.2c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.7-4.3 7.3-10.7 7.3-17.3z"/>
-      <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.9-6c-2.2 1.5-5 2.3-8.1 2.3-6.2 0-11.5-4.2-13.4-9.9H2.4v6.2C6.4 42.5 14.7 48 24 48z"/>
-      <path fill="#FBBC05" d="M10.6 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6v-6.2H2.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.6 2.4 10.8l8.2-6.2z"/>
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.8-6.8C35.9 2.4 30.4 0 24 0 14.7 0 6.4 5.5 2.4 13.2l8.2 6.2C12.5 13.7 17.8 9.5 24 9.5z"/>
-    </svg>
-  );
-}
-function FacebookIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.875 11.86V15.47H7.078V12h3.047v-2.64c0-3.007 1.79-4.668 4.533-4.668 1.312 0 2.686.234 2.686.234v2.953h-1.514c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.469h-2.796v8.39A12 12 0 0 0 24 12z"/>
-    </svg>
-  );
-}
-function XIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
-}
+// ── Variants ──────────────────────────────────────────────────
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+const itemVariants: Variants = {
+  hidden:  { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: "easeOut" } },
+};
+const shakeVariants: Variants = {
+  shake: { x: [0, -10, 10, -8, 8, -4, 0], transition: { duration: 0.45 } },
+};
 
-// ─── Intent options ───────────────────────────────────────────
+// ── Intent options ────────────────────────────────────────────
 const INTENTS = [
-  {
-    id: "buyer",
-    icon: ShoppingBag,
-    label: "Shop & Buy",
-    description: "Browse products and services",
-    color: "green",
-  },
-  {
-    id: "seller",
-    icon: Package,
-    label: "Sell Products",
-    description: "List & sell physical or digital goods",
-    color: "green",
-  },
-  {
-    id: "freelancer",
-    icon: Briefcase,
-    label: "Offer Services",
-    description: "Freelance & get hired for your skills",
-    color: "gold",
-  },
-  {
-    id: "client",
-    icon: Users,
-    label: "Hire Talent",
-    description: "Post jobs and find skilled freelancers",
-    color: "gold",
-  },
+  { id: "buyer",      icon: ShoppingBag, label: "Buy products",    desc: "Shop from sellers worldwide" },
+  { id: "seller",     icon: Package,     label: "Sell products",   desc: "List & sell goods online"    },
+  { id: "freelancer", icon: Briefcase,   label: "Offer services",  desc: "Get hired for your skills"   },
+  { id: "client",     icon: Users,       label: "Hire talent",     desc: "Post jobs & find experts"    },
 ] as const;
-
 type Intent = (typeof INTENTS)[number]["id"];
 
-// ─── Password strength ────────────────────────────────────────
-function getStrength(pw: string): { score: number; label: string; color: string } {
-  if (!pw) return { score: 0, label: "", color: "" };
+// ── Password strength ─────────────────────────────────────────
+function strength(pw: string) {
+  if (!pw) return { score: 0, label: "", bar: "" };
   let s = 0;
-  if (pw.length >= 8) s++;
-  if (/[A-Z]/.test(pw)) s++;
-  if (/[0-9]/.test(pw)) s++;
+  if (pw.length >= 8)          s++;
+  if (/[A-Z]/.test(pw))        s++;
+  if (/[0-9]/.test(pw))        s++;
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   const map = [
-    { label: "Weak", color: "bg-red-500" },
-    { label: "Fair", color: "bg-gold-500" },
-    { label: "Good", color: "bg-gold-400" },
-    { label: "Strong", color: "bg-primary-500" },
-    { label: "Very strong", color: "bg-primary-600" },
+    { label: "Weak",      bar: "bg-red-500"      },
+    { label: "Fair",      bar: "bg-orange-400"   },
+    { label: "Good",      bar: "bg-yellow-400"   },
+    { label: "Strong",    bar: "bg-primary-500"  },
+    { label: "Very strong", bar: "bg-primary-600" },
   ];
   return { score: s, ...map[s] };
 }
 
+// ── Floating label input ──────────────────────────────────────
+function Field({
+  id, name, type, label, autoComplete, placeholder, onChange, hasError, errorText,
+}: {
+  id: string; name: string; type: string; label: string;
+  autoComplete?: string; placeholder?: string;
+  onChange?: (v: string) => void;
+  hasError?: boolean;
+  errorText?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [value,   setValue]   = useState("");
+  const [show,    setShow]    = useState(false);
+  const isPassword = type === "password";
+  const inputType  = isPassword ? (show ? "text" : "password") : type;
+  const float      = focused || value.length > 0;
+
+  return (
+    <motion.div variants={itemVariants}>
+      <div className="relative">
+        <motion.label
+          htmlFor={id}
+          animate={{
+            top:      float ? "8px" : "50%",
+            fontSize: float ? "11px" : "14px",
+            color:    focused ? "#16a34a" : hasError ? "#dc2626" : "#9ca3af",
+          }}
+          transition={{ duration: 0.18 }}
+          className="absolute left-4 -translate-y-1/2 pointer-events-none font-medium z-10"
+          style={{ top: "50%", fontSize: "14px" }}
+        >
+          {label}
+        </motion.label>
+        <input
+          id={id}
+          name={name}
+          type={inputType}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            onChange?.(e.target.value);
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={float ? (placeholder ?? "") : ""}
+          required
+          className={`w-full h-14 px-4 pt-5 pb-2 rounded-xl border-2 bg-white text-sm text-gray-900 outline-none transition-colors duration-150 ${
+            focused ? "border-primary-500 shadow-sm shadow-primary-100" : hasError ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+          } ${isPassword ? "pr-12" : ""}`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label={show ? "Hide" : "Show"}
+            tabIndex={-1}
+          >
+            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+      {errorText && (
+        <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+          <AlertCircle className="w-3 h-3 shrink-0" />
+          {errorText}
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+// ── Register form ─────────────────────────────────────────────
 function RegisterForm() {
   const searchParams = useSearchParams();
   const urlIntent = searchParams.get("intent") as Intent | null;
@@ -105,353 +131,199 @@ function RegisterForm() {
   const [intent, setIntent] = useState<Intent>(
     INTENTS.some((i) => i.id === urlIntent) ? (urlIntent as Intent) : "buyer"
   );
-  const [tab, setTab] = useState<"email" | "phone">("email");
-  const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [agreed, setAgreed] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+  const [pw,          setPw]          = useState("");
+  const [agreed,      setAgreed]      = useState(false);
+  const [termsError,  setTermsError]  = useState(false);
 
-  const [state, formAction, isPending] = useActionState(signUpAction, null);
-  const strength = getStrength(password);
+  const [state, dispatch] = useActionState(signUpAction, null);
+  const [isPending, startTransition] = useTransition();
+  const pwStrength = strength(pw);
 
-  async function handleOAuth(provider: string) {
-    setOauthLoading(provider);
-    await signIn(provider, { callbackUrl: "/dashboard" });
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!agreed) {
+      setTermsError(true);
+      document.getElementById("terms-check")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    const formData = new FormData(e.currentTarget);
+    startTransition(() => dispatch(formData));
   }
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-            Create your account
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Free forever · No listing fees to start
-          </p>
-        </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full"
+    >
+      {/* Heading */}
+      <motion.div variants={itemVariants} className="mb-6">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Create account</h1>
+        <p className="mt-1.5 text-sm text-gray-500">Free forever · No listing fees to start</p>
+      </motion.div>
 
-        <div className="px-8 py-6 space-y-6">
-          {/* Error banner */}
-          {state?.error && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{state.error}</span>
-            </div>
-          )}
-
-          {/* ── Intent picker ── */}
-          <div>
-            <p className="text-sm font-semibold text-gray-700 mb-3">
-              What brings you to Exhubb?
-              <span className="ml-1.5 text-xs font-normal text-gray-400">
-                (you can add more roles later)
-              </span>
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {INTENTS.map(({ id, icon: Icon, label, description, color }) => {
-                const active = intent === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setIntent(id)}
-                    className={`relative text-left rounded-xl border-2 p-3.5 transition-all ${
-                      active
-                        ? color === "green"
-                          ? "border-primary-600 bg-primary-50"
-                          : "border-gold-500 bg-gold-50"
-                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {/* Check indicator */}
-                    {active && (
-                      <span
-                        className={`absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center ${
-                          color === "green" ? "bg-primary-600" : "bg-gold-500"
-                        }`}
-                      >
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                      </span>
-                    )}
-                    <Icon
-                      className={`w-5 h-5 mb-2 ${
-                        active
-                          ? color === "green"
-                            ? "text-primary-600"
-                            : "text-gold-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                    <p
-                      className={`text-xs font-bold leading-tight ${
-                        active ? "text-gray-900" : "text-gray-600"
-                      }`}
-                    >
-                      {label}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
-                      {description}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── OAuth ── */}
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => handleOAuth("google")}
-              disabled={!!oauthLoading}
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-            >
-              {oauthLoading === "google" ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
-              Continue with Google
-            </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleOAuth("facebook")}
-                disabled={!!oauthLoading}
-                className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-              >
-                {oauthLoading === "facebook" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FacebookIcon />}
-                Facebook
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOAuth("twitter")}
-                disabled={!!oauthLoading}
-                className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-60"
-              >
-                {oauthLoading === "twitter" ? <Loader2 className="w-4 h-4 animate-spin" /> : <XIcon />}
-                X (Twitter)
-              </button>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400 font-medium">
-                or fill in your details
-              </span>
-            </div>
-          </div>
-
-          {/* ── Form ── */}
-          <form action={formAction} className="space-y-4">
-            {/* Pass the selected intent as a hidden field */}
-            <input type="hidden" name="intent" value={intent} />
-            {/* Full name */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Full name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                placeholder="Jane Doe"
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-              />
-            </div>
-
-            {/* Email / Phone toggle */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  {tab === "email" ? "Email address" : "Phone number"}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setTab(tab === "email" ? "phone" : "email")}
-                  className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 transition-colors"
-                >
-                  {tab === "email" ? (
-                    <><Phone className="w-3 h-3" /> Use phone instead</>
-                  ) : (
-                    <><Mail className="w-3 h-3" /> Use email instead</>
-                  )}
-                </button>
-              </div>
-
-              {tab === "email" ? (
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                />
-              ) : (
-                <div className="flex gap-2">
-                  <select className="h-11 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition shrink-0">
-                    <option>🇺🇸 +1</option>
-                    <option>🇬🇧 +44</option>
-                    <option>🇳🇬 +234</option>
-                    <option>🇿🇦 +27</option>
-                    <option>🇬🇭 +233</option>
-                    <option>🇰🇪 +254</option>
-                    <option>🇮🇳 +91</option>
-                  </select>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    required
-                    placeholder="800 000 0000"
-                    className="flex-1 h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="reg-password"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="reg-password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  placeholder="Min. 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 px-3.5 pr-11 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-
-              {/* Strength meter */}
-              {password && (
-                <div className="mt-2 space-y-1">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          i < strength.score ? strength.color : "bg-gray-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className={`text-xs font-medium ${
-                    strength.score <= 1 ? "text-red-500" :
-                    strength.score <= 2 ? "text-gold-600" :
-                    "text-primary-600"
-                  }`}>
-                    {strength.label}
-                    <span className="ml-1.5 font-normal text-gray-400">
-                      Use uppercase, numbers & symbols to strengthen it
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Terms */}
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-0.5 shrink-0">
-                <input
-                  type="checkbox"
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-4.5 h-4.5 rounded flex items-center justify-center border-2 transition-colors ${
-                    agreed
-                      ? "bg-primary-600 border-primary-600"
-                      : "border-gray-300 group-hover:border-gray-400"
-                  }`}
-                  style={{ width: 18, height: 18 }}
-                >
-                  {agreed && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                </div>
-              </div>
-              <span className="text-xs text-gray-500 leading-relaxed">
-                I agree to Exhubb&apos;s{" "}
-                <Link href="/terms" className="text-primary-600 hover:underline font-medium">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-primary-600 hover:underline font-medium">
-                  Privacy Policy
-                </Link>
-                . I&apos;ll receive account-related emails.
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={isPending || !agreed}
-              className="w-full h-11 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  Create account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 text-center text-sm text-gray-500">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+      {/* Error */}
+      <AnimatePresence>
+        {state?.error && (
+          <motion.div
+            key="err"
+            variants={shakeVariants}
+            animate="shake"
+            initial={{ opacity: 0, y: -8 }}
+            className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"
           >
-            Sign in
-          </Link>
-        </div>
-      </div>
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{state.error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <p className="mt-4 text-center text-xs text-gray-400">
-        Protected by industry-standard encryption.{" "}
-        <Link href="/privacy" className="underline hover:text-gray-600 transition-colors">
-          Privacy policy
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input type="hidden" name="intent" value={intent} />
+
+        {/* Intent selector */}
+        <motion.div variants={itemVariants}>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2.5">
+            What will you use Exhubb for?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {INTENTS.map(({ id, icon: Icon, label, desc }) => {
+              const active = intent === id;
+              return (
+                <motion.button
+                  key={id}
+                  type="button"
+                  onClick={() => setIntent(id)}
+                  whileTap={{ scale: 0.97 }}
+                  className={`relative text-left rounded-xl border-2 p-3 transition-all ${
+                    active
+                      ? "border-primary-500 bg-primary-50"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {active && (
+                    <span className="absolute top-2 right-2 w-4 h-4 bg-primary-600 rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                    </span>
+                  )}
+                  <Icon className={`w-4 h-4 mb-1.5 ${active ? "text-primary-600" : "text-gray-400"}`} />
+                  <p className={`text-xs font-bold leading-tight ${active ? "text-gray-900" : "text-gray-600"}`}>
+                    {label}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{desc}</p>
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Fields */}
+        <Field id="name" name="name" type="text" label="Full name"
+          autoComplete="name" placeholder="Jane Doe" />
+
+        <Field id="email" name="email" type="email" label="Email address"
+          autoComplete="email" placeholder="you@example.com"
+          hasError={state?.field === "email"}
+          errorText={state?.field === "email" ? state.error : undefined} />
+
+        <div className="space-y-1.5">
+          <Field id="password" name="password" type="password" label="Password"
+            autoComplete="new-password" placeholder="Min. 8 characters"
+            onChange={setPw} />
+
+          {/* Strength meter */}
+          <AnimatePresence>
+            {pw && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex gap-1 mb-1 px-0.5">
+                  {[0,1,2,3].map((i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: i < pwStrength.score ? 1 : 0.15 }}
+                      transition={{ duration: 0.25, delay: i * 0.04 }}
+                      className={`h-1 flex-1 rounded-full origin-left ${i < pwStrength.score ? pwStrength.bar : "bg-gray-200"}`}
+                    />
+                  ))}
+                </div>
+                <p className={`text-xs font-semibold ${pwStrength.score <= 1 ? "text-red-500" : pwStrength.score <= 2 ? "text-orange-500" : "text-primary-600"}`}>
+                  {pwStrength.label}
+                  <span className="ml-1.5 font-normal text-gray-400">
+                    · Mix uppercase, numbers & symbols
+                  </span>
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Terms */}
+        <motion.div variants={itemVariants}>
+          <label id="terms-check" className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => { setAgreed(e.target.checked); setTermsError(false); }}
+                className="sr-only"
+              />
+              <motion.div
+                animate={{
+                  backgroundColor: agreed ? "#16a34a" : termsError ? "#fee2e2" : "#fff",
+                  borderColor:     agreed ? "#16a34a" : termsError ? "#f87171" : "#d1d5db",
+                }}
+                className="w-[18px] h-[18px] rounded-[5px] border-2 flex items-center justify-center transition-colors"
+              >
+                {agreed && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              </motion.div>
+            </div>
+            <span className="text-xs text-gray-500 leading-relaxed">
+              I agree to{" "}
+              <Link href="/terms" className="text-primary-600 hover:underline font-semibold">Terms</Link>
+              {" "}and{" "}
+              <Link href="/privacy" className="text-primary-600 hover:underline font-semibold">Privacy Policy</Link>
+              . I&apos;ll receive account-related emails.
+            </span>
+          </label>
+          {termsError && (
+            <p className="mt-1.5 ml-7 text-xs text-red-500 font-medium">
+              Please accept the terms to continue.
+            </p>
+          )}
+        </motion.div>
+
+        {/* Submit */}
+        <motion.div variants={itemVariants} className="pt-1">
+          <motion.button
+            type="submit"
+            disabled={isPending}
+            whileHover={{ scale: isPending ? 1 : 1.015 }}
+            whileTap={{ scale: isPending ? 1 : 0.97 }}
+            className="w-full h-12 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
+          >
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>Create account <ArrowRight className="w-4 h-4" /></>
+            )}
+          </motion.button>
+        </motion.div>
+      </form>
+
+      {/* Login link */}
+      <motion.div variants={itemVariants} className="mt-5 text-center text-sm text-gray-500">
+        Already have an account?{" "}
+        <Link href="/login" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+          Sign in
         </Link>
-      </p>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -462,3 +334,4 @@ export default function RegisterPage() {
     </Suspense>
   );
 }
+

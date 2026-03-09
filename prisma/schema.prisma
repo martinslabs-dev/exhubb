@@ -28,9 +28,24 @@ model User {
   isSeller     Boolean @default(false)
   isFreelancer Boolean @default(false)
 
+  // Seller store profile
+  storeName         String?
+  storeSlug         String?  @unique
+  storeLogo         String?
+  storeBanner       String?
+  storeBio          String?
+  sellerStatus      SellerStatus @default(PENDING)
+  isSellerVerified  Boolean @default(false)
+
+  // Bank / payout details
+  bankName          String?
+  bankAccountName   String?
+  bankAccountNumber String?
+
   // Security
   isLocked    Boolean   @default(false)
   lockedUntil DateTime?
+  phoneVerified Boolean  @default(false)
 
   // Auth.js relations
   accounts  Account[]
@@ -44,9 +59,16 @@ model User {
   sellerOrders         Order[]        @relation("SellerOrders")
   watchlistItems       WatchlistItem[]
   savedItems           SavedItem[]
+  cart                 Cart?
+  reviewsGiven         Review[]       @relation("ReviewsGiven")
   buyerConversations   Conversation[] @relation("BuyerConversations")
   sellerConversations  Conversation[] @relation("SellerConversations")
   sentMessages         Message[]      @relation("SentMessages")
+  notifications        Notification[]
+  walletTransactions   WalletTransaction[]
+  discountCodes        DiscountCode[]      @relation("SellerDiscounts")
+
+  walletBalance Float @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -63,13 +85,73 @@ model Product {
   category    String
   stock       Int      @default(0)
   isActive    Boolean  @default(true)
+
+  // Pricing
+  compareAtPrice Float?   // original/crossed-out price
+
+  // Inventory
+  unlimitedStock    Boolean @default(false)
+  lowStockThreshold Int     @default(5)
+
+  // Tags & scheduling
+  tags      String[]
+  publishAt DateTime? // if set, auto-publish at this datetime
+
+  // Digital product
+  productType      ProductType @default(PHYSICAL)
+  digitalFiles     String[]    // uploaded file URLs
+  digitalFileNames String[]    // friendly display names for the files
+
+  // Shipping
+  weight        Float?          // kg
+  shipsFromCity String?
+  shipsFromCountry String?      // ISO 3166-1 alpha-2 e.g. "NG"
+  shippingZones ShippingZone[]  // which zones this product ships to
+  nigeriaFee    Float?          // flat fee in NGN for Nigeria delivery
+  africaFee     Float?          // flat fee for Africa (cross-border)
+  internationalFee Float?       // flat fee for international
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  seller         User            @relation("SellerProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  seller         User             @relation("SellerProducts", fields: [sellerId], references: [id], onDelete: Cascade)
   orders         Order[]
   watchlistItems WatchlistItem[]
   savedItems     SavedItem[]
+  cartItems      CartItem[]
+  reviews        Review[]
+  variants       ProductVariant[]
+}
+
+// ─── Product Variants ─────────────────────────────────────────
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  name      String   // e.g. "Size", "Color"
+  value     String   // e.g. "XL", "Red"
+  price     Float?   // override product price if set
+  stock     Int      @default(0)
+  sku       String?
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum ShippingZone {
+  NIGERIA
+  AFRICA
+  INTERNATIONAL
+}
+
+enum ProductType {
+  PHYSICAL
+  DIGITAL
+}
+
+enum SellerStatus {
+  PENDING
+  VERIFIED
+  SUSPENDED
 }
 
 // ─── Gig (freelancer service listing) ────────────────────────
@@ -83,6 +165,7 @@ model Gig {
   premiumPrice   Float?
   category       String
   tags           String[]
+  samples        String[]
   deliveryDays   Int      @default(3)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
@@ -105,6 +188,36 @@ model Order {
   amount    Float
   quantity  Int         @default(1)
   notes     String?
+
+  // Shipping info (captured at checkout)
+  shippingName     String?
+  shippingPhone    String?
+  shippingAddress  String?
+  shippingCity     String?
+  shippingState    String?
+  shippingCountry  String?
+  shippingZone     ShippingZone?
+  shippingFee      Float?
+  courierName      String?       // e.g. "GIG Logistics"
+  trackingNumber   String?
+  trackingUrl      String?
+  estimatedDays    Int?
+
+  // Digital delivery
+  downloadToken String?  @unique  // secure token for digital file access
+  downloadCount Int      @default(0)
+
+  // Payment & discount
+  paystackRef    String?
+  paymentStatus  PaymentStatus @default(PENDING)
+  discountCodeId String?
+  discountAmount Float?
+
+  // Refunds
+  refundStatus   RefundStatus?
+  refundReason   String?
+  refundedAt     DateTime?
+
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -113,6 +226,7 @@ model Order {
   product      Product?      @relation(fields: [productId], references: [id])
   gig          Gig?          @relation(fields: [gigId],     references: [id])
   conversation Conversation?
+  discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id])
 }
 
 enum OrderType {
@@ -130,6 +244,82 @@ enum OrderStatus {
   CANCELLED
   REFUNDED
   DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+// ─── Discount Codes ───────────────────────────────────────────
+model DiscountCode {
+  id             String       @id @default(cuid())
+  sellerId       String
+  code           String       @unique
+  type           DiscountType
+  value          Float
+  minOrderAmount Float?
+  maxUses        Int?
+  usedCount      Int          @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  seller User    @relation("SellerDiscounts", fields: [sellerId], references: [id], onDelete: Cascade)
+  orders Order[]
+}
+
+// ─── Cart ─────────────────────────────────────────────────────
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  cart    Cart    @relation(fields: [cartId],    references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+}
+
+// ─── Reviews ──────────────────────────────────────────────────
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  reviewerId String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  product  Product @relation(fields: [productId],  references: [id], onDelete: Cascade)
+  reviewer User    @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  @@unique([productId, reviewerId])
 }
 
 // ─── Watchlist ────────────────────────────────────────────────
@@ -185,11 +375,80 @@ model Message {
   sender       User         @relation("SentMessages", fields: [senderId], references: [id])
 }
 
+// ─── Notifications ────────────────────────────────────────────
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_COMPLETED
+  ORDER_CANCELLED
+  ORDER_DISPUTED
+  MESSAGE_RECEIVED
+  REVIEW_RECEIVED
+  PAYOUT_SENT
+  SYSTEM
+}
+
+// ─── Wallet Transactions ──────────────────────────────────────
+model WalletTransaction {
+  id          String                  @id @default(cuid())
+  userId      String
+  type        WalletTransactionType
+  amount      Float
+  description String?
+  reference   String?
+  status      WalletTransactionStatus @default(COMPLETED)
+  createdAt   DateTime                @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum WalletTransactionType {
+  TOP_UP
+  PURCHASE
+  SALE_CREDIT
+  PAYOUT
+  REFUND
+  FEE
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// ─── Newsletter Subscribers ───────────────────────────────────
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  subscribedAt DateTime @default(now())
+}
+
 // ─── OTP tokens (email verification + password reset) ─────────
 model OtpToken {
   id        String   @id @default(cuid())
   userId    String
   email     String
+  phone     String?  // for WhatsApp OTP
   code      String   // bcrypt-hashed 6-digit code
   type      OtpType
   expiresAt DateTime
@@ -204,6 +463,7 @@ model OtpToken {
 enum OtpType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  PHONE_VERIFICATION
 }
 
 // ─── Auth.js required models ──────────────────────────────────

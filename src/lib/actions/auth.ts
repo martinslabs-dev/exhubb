@@ -32,11 +32,9 @@ export async function signUpAction(
     if (!notRateLimited) {
       return { error: "Too many registrations from this network. Try again in 1 hour." };
     }
-  } catch {
-    // Redis down — skip rate limit in dev, block in prod
-    if (process.env.NODE_ENV === "production") {
-      return { error: "Service temporarily unavailable. Please try again." };
-    }
+  } catch (e) {
+    // Redis down — skip rate limiting but do NOT block registration
+    console.warn("[signUpAction] Rate limiter unavailable, skipping:", e);
   }
 
   // 2. Zod validation
@@ -110,10 +108,9 @@ export async function signInAction(
       return { error: "Too many login attempts. Try again in 15 minutes." };
     }
     remaining = rl.remaining;
-  } catch {
-    if (process.env.NODE_ENV === "production") {
-      return { error: "Service temporarily unavailable. Please try again." };
-    }
+  } catch (e) {
+    // Redis down — skip rate limiting but do NOT block login
+    console.warn("[signInAction] Rate limiter unavailable, skipping:", e);
   }
 
   // 2. Zod validation

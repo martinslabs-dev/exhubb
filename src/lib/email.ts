@@ -17,11 +17,24 @@ function devLog(label: string, to: string, code: string) {
   }
 }
 
+/** Shared send helper — logs Resend errors instead of silently dropping them. */
+async function trySend(payload: Parameters<typeof resend.emails.send>[0]) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("[email] RESEND_API_KEY is not set — email not sent to:", payload.to);
+    return;
+  }
+  const result = await resend.emails.send(payload);
+  if (result.error) {
+    console.error("[email] Resend error sending to", payload.to, ":", result.error);
+  }
+  return result;
+}
+
 // ─── Email Verification OTP ───────────────────────────────────
 export async function sendVerificationEmail(email: string, name: string, code: string) {
   devLog("Email Verification OTP", email, code);
   if (!process.env.RESEND_API_KEY && IS_DEV) return; // skip Resend in dev if key absent
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to: email,
     subject: "Your Exhubb verification code",
@@ -42,7 +55,7 @@ export async function sendVerificationEmail(email: string, name: string, code: s
 export async function sendPasswordResetEmail(email: string, name: string, code: string) {
   devLog("Password Reset OTP", email, code);
   if (!process.env.RESEND_API_KEY && IS_DEV) return;
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to: email,
     subject: "Reset your Exhubb password",
@@ -76,7 +89,7 @@ export async function sendOrderConfirmationEmail(
     )
     .join("");
 
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to,
     subject: "Order confirmed — Exhubb",
@@ -105,7 +118,7 @@ export async function sendSellerNewOrderEmail(
   productTitle: string,
   amount: number,
 ) {
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to,
     subject: "New order received — Exhubb",
@@ -135,7 +148,7 @@ export async function sendOrderShippedEmail(
   trackingNumber: string,
   courier: string,
 ) {
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to,
     subject: "Your order has shipped — Exhubb",
@@ -160,7 +173,7 @@ export async function sendOrderShippedEmail(
 
 // ─── Welcome Email ────────────────────────────────────────────
 export async function sendWelcomeEmail(email: string, name: string) {
-  return resend.emails.send({
+  return trySend({
     from: FROM,
     to: email,
     subject: "Welcome to Exhubb 🎉",

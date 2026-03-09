@@ -320,7 +320,7 @@ export default async function FreelancerDashboard() {
                 <h2 className="text-sm font-semibold text-gray-900">Freelancer Rating</h2>
               </div>
               <p className="text-3xl font-bold text-gray-900 tabular-nums mt-2">
-                {ratingAgg._avg.rating!.toFixed(1)}
+                {Number(ratingAgg._avg.rating).toFixed(1)}
                 <span className="text-sm font-normal text-gray-400"> / 5.0</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">

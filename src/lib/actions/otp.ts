@@ -52,13 +52,22 @@ export async function verifyEmailAction(
     return { error: "Something went wrong. Please try again in a moment." };
   }
 
-  // Call signIn directly from this Server Action — the correct NextAuth v5 pattern.
-  // signIn() throws NEXT_REDIRECT internally; we must NOT catch-and-swallow it.
-  const { randomBytes } = await import("crypto");
-  const token = randomBytes(32).toString("hex");
-  await redis.set(`phone-signin:${token}`, userId, { ex: 300 });
-  await signIn("phone-otp", { token, redirectTo: "/add-phone" });
-  return {}; // unreachable — signIn always redirects
+  // Auto sign-in via phone-otp provider (requires Redis).
+  // If Redis is unavailable, fall back to redirecting to /login?verified=1 instead.
+  try {
+    const { randomBytes } = await import("crypto");
+    const token = randomBytes(32).toString("hex");
+    await redis.set(`phone-signin:${token}`, userId, { ex: 300 });
+    await signIn("phone-otp", { token, redirectTo: "/add-phone" });
+  } catch (err: any) {
+    // Re-throw NEXT_REDIRECT so successful signIn redirects propagate
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
+    // Redis or signIn failed — fall back to manual login
+    console.error("[verifyEmailAction] Auto sign-in failed, falling back:", err);
+  }
+  // Fallback: email is verified but auto sign-in failed — send to login
+  redirect("/login?verified=1");
+  return {}; // unreachable
 }
 
 // ─── Resend verification OTP ─────────────────────────────────
@@ -71,9 +80,13 @@ export async function resendOtpAction(
     const ip = headersList.get("x-forwarded-for") ?? "unknown";
     const email = (formData.get("email") as string) ?? "";
 
-    const { success } = await otpRatelimit.limit(`${ip}:${email}`);
-    if (!success) {
-      return { error: "Too many resend attempts. Wait 10 minutes before trying again." };
+    try {
+      const { success } = await otpRatelimit.limit(`${ip}:${email}`);
+      if (!success) {
+        return { error: "Too many resend attempts. Wait 10 minutes before trying again." };
+      }
+    } catch (e) {
+      console.warn("[resendOtpAction] Rate limiter unavailable, skipping:", e);
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -163,8 +176,12 @@ export async function sendPhoneOtpAction(
     const headersList = await headers();
     const ip = headersList.get("x-forwarded-for") ?? "unknown";
 
-    const { success } = await otpRatelimit.limit(`phone-otp:${ip}:${phone}`);
-    if (!success) return { error: "Too many attempts. Try again in 10 minutes." };
+    try {
+      const { success } = await otpRatelimit.limit(`phone-otp:${ip}:${phone}`);
+      if (!success) return { error: "Too many attempts. Try again in 10 minutes." };
+    } catch (e) {
+      console.warn("[sendPhoneOtpAction] Rate limiter unavailable, skipping:", e);
+    }
 
     let user = await prisma.user.findUnique({ where: { phone } });
 
@@ -230,11 +247,15 @@ export async function verifyPhoneOtpAction(
       redirectTo = "/dashboard?phone=verified";
     } else {
       // Sign in directly from the Server Action (correct NextAuth v5 pattern)
-      const { randomBytes } = await import("crypto");
-      const token = randomBytes(32).toString("hex");
-      await redis.set(`phone-signin:${token}`, result.userId!, { ex: 90 });
-      // signIn throws NEXT_REDIRECT — must be outside try/catch (handled below)
-      redirectTo = `__phone_signin__:${token}`;
+      try {
+        const { randomBytes } = await import("crypto");
+        const token = randomBytes(32).toString("hex");
+        await redis.set(`phone-signin:${token}`, result.userId!, { ex: 90 });
+        redirectTo = `__phone_signin__:${token}`;
+      } catch (redisErr) {
+        console.warn("[verifyPhoneOtpAction] Redis unavailable, falling back to login:", redisErr);
+        redirectTo = "/login?verified=1";
+      }
     }
   } catch (err) {
     console.error("[verifyPhoneOtpAction]", err);
@@ -273,8 +294,12 @@ export async function addPhoneAction(
       return { error: "Enter a valid phone number with country code, e.g. +2348012345678" };
     }
 
-    const { success } = await otpRatelimit.limit(`add-phone:${ip}:${session.user.id}`);
-    if (!success) return { error: "Too many attempts. Try again in 10 minutes." };
+    try {
+      const { success } = await otpRatelimit.limit(`add-phone:${ip}:${session.user.id}`);
+      if (!success) return { error: "Too many attempts. Try again in 10 minutes." };
+    } catch (e) {
+      console.warn("[addPhoneAction] Rate limiter unavailable, skipping:", e);
+    }
 
     const existing = await prisma.user.findUnique({ where: { phone } });
     if (existing && existing.id !== session.user.id) {

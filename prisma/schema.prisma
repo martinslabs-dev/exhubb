@@ -39,8 +39,10 @@ model User {
 
   // Bank / payout details
   bankName          String?
+  bankCode          String?   // Flutterwave bank code (e.g. "044")
   bankAccountName   String?
   bankAccountNumber String?
+  flwRecipientMeta  String?   // JSON string with any Flutterwave recipient metadata
 
   // Security
   isLocked    Boolean   @default(false)
@@ -412,8 +414,9 @@ model WalletTransaction {
   type        WalletTransactionType
   amount      Float
   description String?
-  reference   String?
-  status      WalletTransactionStatus @default(COMPLETED)
+  reference   String?                 @unique  // Flutterwave tx_ref
+  flwRef      String?                 // Flutterwave's own reference
+  status      WalletTransactionStatus @default(PENDING)
   createdAt   DateTime                @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

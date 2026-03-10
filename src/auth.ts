@@ -113,27 +113,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   // ── Callbacks ──────────────────────────────────────────────
   callbacks: {
-    // Stamp custom fields from DB onto the JWT token
+    // Stamp custom fields from DB onto the JWT token at sign-in only.
+    // Do NOT call Prisma here — this callback runs on the Edge runtime
+    // where PrismaClient is unavailable. Fresh roles are read in DashboardLayout.
     async jwt({ token, user }) {
       if (user) {
-        // Initial sign-in — stamp fields from authorize()
         token.id            = user.id;
         token.emailVerified = (user as any).emailVerified ?? null;
         token.isBuyer       = (user as any).isBuyer       ?? true;
         token.isSeller      = (user as any).isSeller      ?? false;
         token.isFreelancer  = (user as any).isFreelancer  ?? false;
-      } else if (token.id) {
-        // Subsequent requests — re-fetch roles from DB so role activation
-        // (activateRoleAction) is reflected immediately without re-login
-        const dbUser = await prisma.user.findUnique({
-          where:  { id: token.id as string },
-          select: { isBuyer: true, isSeller: true, isFreelancer: true },
-        });
-        if (dbUser) {
-          token.isBuyer      = dbUser.isBuyer;
-          token.isSeller     = dbUser.isSeller;
-          token.isFreelancer = dbUser.isFreelancer;
-        }
       }
       return token;
     },

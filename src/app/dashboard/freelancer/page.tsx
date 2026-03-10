@@ -33,10 +33,14 @@ const STATUS_CONFIG = {
 
 export default async function FreelancerDashboard() {
   const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
-  if (!session?.user?.isFreelancer) {
-    redirect("/dashboard/buyer");
-  }
+  // Check role from DB — JWT roles are only stamped at sign-in and may be stale
+  const roleCheck = await prisma.user.findUnique({
+    where:  { id: session.user.id },
+    select: { isFreelancer: true },
+  });
+  if (!roleCheck?.isFreelancer) redirect("/dashboard/buyer");
 
   const userId = session.user.id;
   const name   = session.user.name?.split(" ")[0] ?? "there";

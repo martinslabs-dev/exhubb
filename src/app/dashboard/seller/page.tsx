@@ -33,11 +33,14 @@ const STATUS_CONFIG = {
 
 export default async function SellerDashboard() {
   const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
-  // Redirect if user hasn't activated seller role
-  if (!session?.user?.isSeller) {
-    redirect("/dashboard/buyer");
-  }
+  // Check role from DB — JWT roles are only stamped at sign-in and may be stale
+  const roleCheck = await prisma.user.findUnique({
+    where:  { id: session.user.id },
+    select: { isSeller: true },
+  });
+  if (!roleCheck?.isSeller) redirect("/dashboard/buyer");
 
   const userId = session.user.id;
   const name   = session.user.name?.split(" ")[0] ?? "there";

@@ -8,11 +8,12 @@ export const metadata: Metadata = { title: "My Store — Seller Hub" };
 
 export default async function SellerStorePage() {
   const session = await auth();
-  if (!session?.user?.isSeller) redirect("/dashboard/buyer");
+  if (!session?.user?.id) redirect("/login");
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
+      isSeller: true,
       id: true,
       storeName: true,
       storeSlug: true,
@@ -27,7 +28,7 @@ export default async function SellerStorePage() {
     },
   });
 
-  if (!user) redirect("/dashboard/buyer");
+  if (!user || !user.isSeller) redirect("/dashboard/buyer");
 
   return (
     <StoreSetupClient

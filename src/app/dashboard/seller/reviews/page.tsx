@@ -10,9 +10,12 @@ export const metadata = { title: "Reviews" };
 
 export default async function SellerReviewsPage() {
   const session = await auth();
-  if (!session?.user?.isSeller) redirect("/dashboard/buyer");
+  if (!session?.user?.id) redirect("/login");
 
   const userId = session.user.id;
+
+  const roleCheck = await prisma.user.findUnique({ where: { id: userId }, select: { isSeller: true } });
+  if (!roleCheck?.isSeller) redirect("/dashboard/buyer");
 
   const [reviews, completedOrders] = await Promise.all([
     prisma.review.findMany({

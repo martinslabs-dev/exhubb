@@ -11,8 +11,6 @@ export default async function WalletPage({
   searchParams: Promise<Record<string, string>>;
 }) {
   const session = await auth();
-  const params  = await searchParams;
-  const txRef = params.txRef as string | undefined;
 
   const [user, transactions] = await Promise.all([
     prisma.user.findUnique({
@@ -51,12 +49,15 @@ export default async function WalletPage({
       }
     : null;
 
-  // If the redirect contains a txRef, check its status server-side so we only
-  // show the success banner when the payment was actually completed.
-  let topupSuccess = false;
+  const params  = await searchParams;
+  const txRef = params.txRef as string | undefined;
+
+  // If the redirect contains a txRef, pass it through so the client can
+  // display a pending banner and poll the server until the webhook settles it.
+  let initialTxStatus: string | null = null;
   if (txRef) {
     const tx = await prisma.walletTransaction.findUnique({ where: { reference: txRef }, select: { status: true } });
-    topupSuccess = tx?.status === "COMPLETED";
+    initialTxStatus = tx?.status ?? null;
   }
 
   return (
@@ -65,7 +66,8 @@ export default async function WalletPage({
       userName={user?.name ?? "User"}
       transactions={transactions}
       savedBank={savedBank}
-      topupSuccess={topupSuccess}
+      topupTxRef={txRef}
+      initialTopupStatus={initialTxStatus}
     />
   );
 }

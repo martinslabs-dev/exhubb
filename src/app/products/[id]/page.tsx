@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import Navbar from "@/components/sections/Navbar";
 import Footer from "@/components/sections/Footer";
 import AddToCartButton from "./AddToCartButton";
+import BuyNowButton from "./BuyNowButton";
 import ProductImageGallery from "./ProductImageGallery";
 import WriteReviewForm from "./WriteReviewForm";
 import WishlistButton from "@/components/WishlistButton";

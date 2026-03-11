@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import Link from "next/link";
+import TagLink from "@/components/TagLink";
 import Image from "next/image";
 import { Search, Star, Package, Zap, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -471,14 +472,13 @@ export default async function ProductsPage({ searchParams }: Props) {
                           )}
                           {/* tag chips (show first one) */}
                           {product.tags[0] && (
-                            <Link
+                            <TagLink
                               href={buildUrl({ tag: product.tags[0], page: 1 })}
-                              onClick={(e) => e.stopPropagation()}
                               className="flex items-center gap-0.5 text-[10px] text-primary-600 hover:underline"
                             >
                               <Tag className="w-2.5 h-2.5" />
                               {product.tags[0]}
-                            </Link>
+                            </TagLink>
                           )}
                         </div>
                       </div>

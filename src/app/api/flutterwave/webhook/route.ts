@@ -40,55 +40,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Idempotent — only process once. If the pre-created tx wasn't present
-    // (e.g. DB push happened after initialization), create-and-credit here.
-    const existing = await prisma.walletTransaction.findUnique({ where: { reference: txRef } });
+    // Idempotent — only process once
+    const existing = await prisma.walletTransaction.findUnique({
+      where: { reference: txRef },
+    });
 
     if (existing?.status === "COMPLETED") {
       return NextResponse.json({ received: true });
     }
 
-    if (!existing) {
-      // Try to recover userId from meta (we set meta.userId at initialization)
-      const userId = data?.meta?.userId as string | undefined;
-      if (!userId) {
-        console.warn("[flw/webhook] charge.completed: missing txRef and no meta.userId; skipping", txRef);
-        return NextResponse.json({ received: true });
-      }
-
-      // Create transaction as COMPLETED and credit user atomically
-      try {
-        await prisma.$transaction(async (tx) => {
-          await tx.walletTransaction.create({
-            data: {
-              userId,
-              type: "TOP_UP",
-              amount,
-              description: "Wallet top-up via Flutterwave",
-              reference: txRef,
-              flwRef: flwRef ?? null,
-              status: "COMPLETED",
-            },
-          });
-
-          await tx.user.update({ where: { id: userId }, data: { walletBalance: { increment: amount } } });
-        });
-      } catch (err) {
-        console.error("[flw/webhook] failed to create+credit tx:", err);
-      }
-
-      return NextResponse.json({ received: true });
-    }
-
-    // existing present but not completed: mark completed and credit
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.walletTransaction.update({ where: { reference: txRef }, data: { status: "COMPLETED", flwRef: flwRef ?? null } });
-        await tx.user.update({ where: { id: existing.userId }, data: { walletBalance: { increment: amount } } });
+    await prisma.$transaction(async (tx) => {
+      // Mark transaction as completed
+      await tx.walletTransaction.update({
+        where: { reference: txRef },
+        data:  { status: "COMPLETED", flwRef: flwRef ?? null },
       });
-    } catch (err) {
-      console.error("[flw/webhook] failed to update existing tx:", err);
-    }
+
+      // Credit wallet
+      await tx.user.update({
+        where: { id: existing!.userId },
+        data:  { walletBalance: { increment: amount } },
+      });
+    });
   }
 
   // ── Transfer completed (withdrawal payout) ────────────

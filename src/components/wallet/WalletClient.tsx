@@ -32,10 +32,7 @@ interface Props {
   userName: string;
   transactions: TxRow[];
   savedBank: SavedBank | null;
-  // When redirected back from Flutterwave we pass txRef so the client can poll
-  // until the webhook marks the transaction completed/failed.
-  topupTxRef?: string | undefined;
-  initialTopupStatus?: string | null;
+  topupSuccess: boolean;
 }
 
 type TxType = { label: string; color: string; bg: string; iconColor: string; sign: "+" | "-"; icon: React.ElementType };
@@ -84,18 +81,10 @@ const rowVariants = {
   show:   { opacity: 1, y: 0, transition: { type: "spring" as const, damping: 22, stiffness: 300 } },
 };
 
-export default function WalletClient({ balance, userName, transactions, savedBank, topupTxRef, initialTopupStatus }: Props) {
+export default function WalletClient({ balance, userName, transactions, savedBank, topupSuccess }: Props) {
   const [fundOpen,     setFundOpen]     = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [balanceState, setBalanceState] = useState<number>(balance);
-
-  // bannerType: "none" | "pending" | "success" | "failed"
-  const initBanner = (() => {
-    if (initialTopupStatus === "COMPLETED") return "success";
-    if (topupTxRef) return "pending";
-    return "none";
-  })();
-  const [bannerType, setBannerType] = useState<string | null>(initBanner);
+  const [banner,       setBanner]       = useState(topupSuccess);
   const [filter,       setFilter]       = useState<FilterTab>("all");
 
   const totalIn  = transactions.filter((t) => ["TOP_UP", "SALE_CREDIT", "REFUND"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
@@ -116,46 +105,6 @@ export default function WalletClient({ balance, userName, transactions, savedBan
     return acc;
   }, {});
 
-  // Poll transaction status when we have a txRef and it's not yet settled
-  useEffect(() => {
-    if (!topupTxRef) return;
-    if (initialTopupStatus === "COMPLETED") return;
-    let cancelled = false;
-    let attempts = 0;
-
-    const check = async () => {
-      try {
-        const res = await fetch(`/api/wallet/tx-status?reference=${encodeURIComponent(topupTxRef)}`);
-        if (!res.ok) return;
-        const body = await res.json();
-        const status = body?.status;
-        const newBalance = typeof body?.balance === "number" ? body.balance : undefined;
-
-        if (status === "COMPLETED") {
-          if (typeof newBalance === "number") setBalanceState(newBalance);
-          setBannerType("success");
-          cancelled = true;
-          return;
-        }
-
-        if (status === "FAILED" || status === "CANCELLED") {
-          setBannerType("failed");
-          cancelled = true;
-          return;
-        }
-      } catch (err) {
-        // ignore and retry
-      }
-      attempts += 1;
-      if (attempts >= 40) { cancelled = true; }
-    };
-
-    const iv = setInterval(() => { if (!cancelled) check(); }, 3000);
-    // run immediate check
-    check();
-    return () => { cancelled = true; clearInterval(iv); };
-  }, [topupTxRef]);
-
   return (
     <>
       <div className="min-h-screen bg-gray-50/60">
@@ -163,7 +112,7 @@ export default function WalletClient({ balance, userName, transactions, savedBan
 
           {/* ── Success banner ──────────────────────────── */}
           <AnimatePresence>
-            {bannerType !== "none" && (
+            {banner && (
               <motion.div
                 key="banner"
                 initial={{ opacity: 0, y: -10, height: 0 }}
@@ -172,59 +121,21 @@ export default function WalletClient({ balance, userName, transactions, savedBan
                 transition={{ type: "spring", damping: 25, stiffness: 320 }}
                 className="overflow-hidden"
               >
-                {bannerType === "pending" && (
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <p className="text-sm text-amber-700 font-medium">
-                        Top-up pending — confirming your payment. We'll update this page shortly.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setBannerType(null)}
-                      className="p-1 hover:bg-amber-100 rounded-lg transition-colors flex-shrink-0"
-                      aria-label="Dismiss"
-                    >
-                      <X className="w-4 h-4 text-amber-400" />
-                    </button>
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <p className="text-sm text-emerald-700 font-medium">
+                      Top-up successful — your wallet has been funded.
+                    </p>
                   </div>
-                )}
-
-                {bannerType === "success" && (
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <p className="text-sm text-emerald-700 font-medium">
-                        Top-up successful — your wallet has been funded.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setBannerType(null)}
-                      className="p-1 hover:bg-emerald-100 rounded-lg transition-colors flex-shrink-0"
-                      aria-label="Dismiss"
-                    >
-                      <X className="w-4 h-4 text-emerald-400" />
-                    </button>
-                  </div>
-                )}
-
-                {bannerType === "failed" && (
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 bg-rose-50 border border-rose-200 rounded-2xl">
-                    <div className="flex items-center gap-2.5">
-                      <ShieldCheck className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                      <p className="text-sm text-rose-700 font-medium">
-                        Top-up failed or cancelled — no funds were added to your wallet.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setBannerType(null)}
-                      className="p-1 hover:bg-rose-100 rounded-lg transition-colors flex-shrink-0"
-                      aria-label="Dismiss"
-                    >
-                      <X className="w-4 h-4 text-rose-400" />
-                    </button>
-                  </div>
-                )}
+                  <button
+                    onClick={() => setBanner(false)}
+                    className="p-1 hover:bg-emerald-100 rounded-lg transition-colors flex-shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    <X className="w-4 h-4 text-emerald-400" />
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -262,7 +173,7 @@ export default function WalletClient({ balance, userName, transactions, savedBan
 
               {/* Amount */}
               <div className="text-3xl sm:text-5xl font-black tracking-tight tabular-nums mt-1 mb-1">
-                <AnimatedBalance value={balanceState} />
+                <AnimatedBalance value={balance} />
               </div>
               <p className="text-primary-300 text-xs mb-6">{userName} · Exhubb Wallet</p>
 

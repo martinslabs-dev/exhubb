@@ -54,8 +54,7 @@ export async function POST(req: NextRequest) {
     tx_ref: txRef,
     amount,
     currency: "NGN",
-    // Include the txRef in the redirect so the dashboard can verify result server-side
-    redirect_url: `${process.env.NEXTAUTH_URL}/dashboard/wallet?txRef=${txRef}`,
+    redirect_url: `${process.env.NEXTAUTH_URL}/dashboard/wallet?topup=1`,
     customer: {
       email: user.email,
       name: user.name ?? "Exhubb User",

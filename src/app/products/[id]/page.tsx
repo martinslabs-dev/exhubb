@@ -306,17 +306,16 @@ export default async function ProductDetailPage({ params }: Props) {
               <div className="space-y-3">
                 {session?.user ? (
                   <>
-                    <Link
-                      href={inStock ? `/checkout?productId=${product.id}&qty=1` : "#"}
+                    <BuyNowButton
+                      productId={product.id}
+                      stock={product.unlimitedStock ? 99 : product.stock}
                       className={cn(
-                        "w-full flex items-center justify-center py-3.5 rounded-xl font-bold text-sm transition-all",
+                        "w-full",
                         inStock
-                          ? "bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md"
+                          ? ""
                           : "bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none"
                       )}
-                    >
-                      Buy Now
-                    </Link>
+                    />
                     <AddToCartButton
                       productId={product.id}
                       stock={product.unlimitedStock ? 99 : product.stock}

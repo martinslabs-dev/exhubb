@@ -227,9 +227,17 @@ export default function Topbar({
                   Settings
                 </Link>
                 <Link
-                  href="/"
-                  target="_blank"
-                  onClick={() => setAvatarOpen(false)}
+                  href={user.storeSlug ? `/store/${user.storeSlug}` : "/dashboard/seller/store"}
+                  target={user.storeSlug ? "_blank" : undefined}
+                  onClick={(e) => {
+                    setAvatarOpen(false);
+                    if (!user.storeSlug) {
+                      e.preventDefault();
+                      // Inform the user they haven't created a store yet
+                      // Keep this simple and usable across environments
+                      alert("You haven't created your store yet. Go to Manage Store to set up your store URL.");
+                    }
+                  }}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4 text-gray-400" />

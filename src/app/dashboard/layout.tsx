@@ -24,7 +24,7 @@ export default async function DashboardLayout({
   const [dbUser, unreadMessages, unreadNotifications] = await Promise.all([
     prisma.user.findUnique({
       where:  { id: session.user.id },
-      select: { name: true, image: true, isBuyer: true, isSeller: true, isFreelancer: true },
+      select: { name: true, image: true, isBuyer: true, isSeller: true, isFreelancer: true, storeSlug: true },
     }),
     prisma.message.count({
       where: { conversation: { OR: [{ buyerId: session.user.id }, { sellerId: session.user.id }] }, senderId: { not: session.user.id }, isRead: false },
@@ -42,6 +42,7 @@ export default async function DashboardLayout({
     isBuyer:      dbUser?.isBuyer      ?? true,
     isSeller:     dbUser?.isSeller     ?? false,
     isFreelancer: dbUser?.isFreelancer ?? false,
+    storeSlug:    dbUser?.storeSlug    ?? null,
   };
 
   return (

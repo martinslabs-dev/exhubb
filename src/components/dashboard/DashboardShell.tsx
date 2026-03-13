@@ -12,6 +12,7 @@ export interface DashboardUser {
   isBuyer: boolean;
   isSeller: boolean;
   isFreelancer: boolean;
+  storeSlug?: string | null;
 }
 
 export default function DashboardShell({

@@ -1,9 +1,6 @@
 "use client";
 
 import Link from "next/link";
-
-"use client";
-
 import { useRouter } from "next/navigation";
 import React from "react";
 

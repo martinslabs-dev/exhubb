@@ -111,26 +111,32 @@ export default async function GigDetailPage({ params }: Props) {
     <>
       <Navbar />
       {/* JSON-LD structured data for the gig/service */}
-      <Script id={`jsonld-gig-${gig.id}`} type="application/ld+json" strategy="afterInteractive">
-        {`{
+      {(() => {
+        const site = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com";
+        const jsonld = {
           "@context": "https://schema.org",
           "@type": "Service",
-          "@id": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/gigs/${gig.id}`}",
-          "name": "${(gig.title ?? "").replace(/"/g, '\\"')}",
-          "description": "${(gig.description ?? "").replace(/"/g, '\\"')}",
-          "provider": {
+          "@id": `${site}/gigs/${gig.id}`,
+          name: gig.title ?? undefined,
+          description: gig.description ?? undefined,
+          provider: {
             "@type": "Person",
-            "name": "${(gig.freelancer.name ?? "").replace(/"/g, '\\"')}",
-            "url": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/freelancer/${gig.freelancer.id}`}`
+            name: gig.freelancer.name ?? undefined,
+            url: `${site}/freelancer/${gig.freelancer.id}`,
           },
-          "offers": {
+          offers: {
             "@type": "Offer",
-            "price": "${gig.basicPrice}",
-            "priceCurrency": "NGN",
-            "url": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/gigs/${gig.id}`}`
-          }
-        }`}
-      </Script>
+            price: `${gig.basicPrice}`,
+            priceCurrency: "NGN",
+            url: `${site}/gigs/${gig.id}`,
+          },
+        };
+        return (
+          <Script id={`jsonld-gig-${gig.id}`} type="application/ld+json" strategy="afterInteractive">
+            {JSON.stringify(jsonld)}
+          </Script>
+        );
+      })()}
       <main className="min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 

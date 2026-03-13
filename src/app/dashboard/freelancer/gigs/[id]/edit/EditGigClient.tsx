@@ -42,6 +42,7 @@ interface Gig {
   tags: string[];
   samples: string[];
   isActive: boolean;
+  coverImage?: string | null;
 }
 
 export default function EditGigClient({ gig }: { gig: Gig }) {

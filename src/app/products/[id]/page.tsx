@@ -583,7 +583,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${product.title} — Exhubb`,
       description: product.description ?? undefined,
       images: product.images && product.images.length ? product.images : undefined,
-      type: "product",
+      type: "website",
     },
     alternates: {
       canonical: url,

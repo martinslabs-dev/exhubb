@@ -20,6 +20,7 @@ type SellerItem = {
   name: string;
   specialty?: string;
   country?: string;
+  storeSlug?: string | null;
   rating?: number | null;
   reviews?: number | null;
   sales?: string | number | null;

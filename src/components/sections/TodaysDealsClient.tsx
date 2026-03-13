@@ -45,6 +45,7 @@ type Deal = {
   icon?: string;
   category: string;
   title: string;
+  imageUrl?: string | null;
   original: number | null;
   current: number;
   rating?: number | null;

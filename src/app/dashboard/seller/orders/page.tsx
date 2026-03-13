@@ -168,7 +168,7 @@ export default async function SellerOrdersPage({
 
                 {/* Amount + actions */}
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <p className="text-base font-black text-gray-900">${order.amount.toFixed(2)}</p>
+                  <p className="text-base font-black text-gray-900">₦{order.amount.toLocaleString()}</p>
                   <div className="flex items-center gap-1">
                     {isNew && (
                       <button className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors">

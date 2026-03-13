@@ -11,10 +11,13 @@ import Footer from "@/components/sections/Footer";
 import SortSelect from "./SortSelect";
 import FilterDrawer from "./FilterDrawer";
 import WishlistButton from "@/components/WishlistButton";
+import taxonomy from "@/lib/taxonomy.json";
 
-const CATEGORIES = [
-  "All", "Electronics", "Fashion", "Motors", "Home & Garden",
-  "Collectibles", "Sports", "Beauty", "Books", "Digital Products", "Other",
+const CATEGORIES: string[] = [
+  "All",
+  ...Array.from(new Set(
+    taxonomy.menu.flatMap((m: any) => m.columns.map((c: any) => c.heading))
+  )),
 ];
 
 const ZONES = [
@@ -33,6 +36,7 @@ interface Props {
   searchParams: Promise<{
     q?: string;
     category?: string;
+    subcategory?: string;
     zone?: string;
     minPrice?: string;
     maxPrice?: string;
@@ -50,6 +54,7 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   const q         = params.q        ?? "";
   const category  = params.category ?? "All";
+  const subcategory = params.subcategory ?? "";
   const zone      = params.zone     ?? "";
   const minPrice  = params.minPrice ? parseFloat(params.minPrice) : undefined;
   const maxPrice  = params.maxPrice ? parseFloat(params.maxPrice) : undefined;
@@ -83,6 +88,7 @@ export default async function ProductsPage({ searchParams }: Props) {
       ],
     } : {}),
     ...(category && category !== "All" ? { category: { equals: category } } : {}),
+    ...(subcategory ? { subcategory: { equals: subcategory } } : {}),
     ...(tag      ? { tags: { has: tag.toLowerCase() } }                     : {}),
     ...(zone     ? { shippingZones: { has: zone as "NIGERIA" | "AFRICA" | "INTERNATIONAL" } } : {}),
     ...(type === "PHYSICAL" ? { productType: "PHYSICAL" } : {}),
@@ -119,6 +125,22 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   const totalPages = Math.ceil(total / perPage);
 
+  // Build subcategory list for the selected category (used for desktop sidebar)
+  let subcategoriesList: string[] = [];
+  if (category && category !== "All") {
+    for (const m of taxonomy.menu as any[]) {
+      for (const col of m.columns as any[]) {
+        if (col.heading === category) {
+          for (const item of col.items || []) {
+            if (item.label) subcategoriesList.push(item.label);
+            if (item.children) subcategoriesList.push(...(item.children as any[]).map((c) => c.label));
+          }
+        }
+      }
+    }
+    subcategoriesList = Array.from(new Set(subcategoriesList));
+  }
+
   // Wishlist state for authenticated users
   const session = await auth();
   const wishlistedIds = new Set<string>();
@@ -144,6 +166,7 @@ export default async function ProductsPage({ searchParams }: Props) {
     if (minPrice) p.set("minPrice", String(minPrice));
     if (maxPrice) p.set("maxPrice", String(maxPrice));
     if (type)     p.set("type",     type);
+    if (subcategory) p.set("subcategory", subcategory);
     if (params.rating) p.set("rating", params.rating);
     if (inStock)  p.set("inStock",  "1");
     if (tag)      p.set("tag",      tag);
@@ -151,6 +174,16 @@ export default async function ProductsPage({ searchParams }: Props) {
       if (v !== undefined && v !== null) p.set(k, String(v));
       else p.delete(k);
     });
+    // If caller changed category via overrides and didn't explicitly set subcategory, clear it
+    if (Object.prototype.hasOwnProperty.call(overrides, "category") && !Object.prototype.hasOwnProperty.call(overrides, "subcategory")) {
+      const newCat = overrides["category"];
+      if (newCat !== undefined && newCat !== null) p.delete("subcategory");
+    }
+    // If caller changed type via overrides (switching between PHYSICAL/DIGITAL), clear subcategory
+    if (Object.prototype.hasOwnProperty.call(overrides, "type") && !Object.prototype.hasOwnProperty.call(overrides, "subcategory")) {
+      const newType = overrides["type"];
+      if (newType !== undefined && newType !== null) p.delete("subcategory");
+    }
     const str = p.toString();
     return `/products${str ? `?${str}` : ""}`;
   }
@@ -161,6 +194,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   if (category !== "All") activeFilters.push({ label: category,             clearKey: "category" });
   if (zone)          activeFilters.push({ label: zone.charAt(0) + zone.slice(1).toLowerCase(), clearKey: "zone" });
   if (type)          activeFilters.push({ label: type === "DIGITAL" ? "Digital" : "Physical", clearKey: "type" });
+  if (subcategory)   activeFilters.push({ label: subcategory, clearKey: "subcategory" });
   if (params.rating) activeFilters.push({ label: `${params.rating}★ & up`,  clearKey: "rating" });
   if (inStock)       activeFilters.push({ label: "In Stock",                clearKey: "inStock" });
   if (minPrice)      activeFilters.push({ label: `Min ₦${minPrice.toLocaleString()}`, clearKey: "minPrice" });
@@ -201,150 +235,156 @@ export default async function ProductsPage({ searchParams }: Props) {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
-          {/* ── Sidebar filters ── */}
-          <aside className="hidden lg:block w-56 shrink-0 space-y-6">
-
-            {/* Product Type */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Product Type</p>
-              <div className="flex flex-col gap-1">
-                {[["", "All Types"], ["PHYSICAL", "📦 Physical"], ["DIGITAL", "⚡ Digital"]].map(([v, label]) => (
+          {/* desktop: enhanced sidebar + main */}
+          <aside className="hidden lg:block w-80 self-start sticky top-24">
+            <div className="space-y-4">
+              {/* Product Type (prominent) */}
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <h3 className="text-sm font-semibold mb-3">Product Type</h3>
+                <div className="flex gap-2">
                   <Link
-                    key={v}
-                    href={buildUrl({ type: v || undefined, page: 1 })}
+                    href={buildUrl({ type: undefined, page: 1 })}
                     className={cn(
-                      "block px-3 py-2 rounded-lg text-sm transition-colors",
-                      type === v ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100"
+                      "flex-1 py-2 rounded-lg text-sm font-medium border text-center",
+                      !type ? "bg-primary-600 text-white border-primary-600" : "border-gray-200 text-gray-700 hover:bg-gray-50"
                     )}
                   >
-                    {label}
+                    All
                   </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Category */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Category</p>
-              <div className="space-y-1">
-                {CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat}
-                    href={buildUrl({ category: cat === "All" ? undefined : cat, page: 1 })}
-                    className={cn(
-                      "block px-3 py-2 rounded-lg text-sm transition-colors",
-                      (category === cat || (cat === "All" && category === "All"))
-                        ? "bg-primary-600 text-white font-semibold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    )}
-                  >
-                    {cat}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Shipping zone */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Ships To</p>
-              <div className="space-y-1">
-                <Link
-                  href={buildUrl({ zone: undefined, page: 1 })}
-                  className={cn(
-                    "block px-3 py-2 rounded-lg text-sm transition-colors",
-                    !zone ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100"
-                  )}
-                >
-                  All Regions
-                </Link>
-                {ZONES.map((z) => (
-                  <Link
-                    key={z.value}
-                    href={buildUrl({ zone: z.value, page: 1 })}
-                    className={cn(
-                      "block px-3 py-2 rounded-lg text-sm transition-colors",
-                      zone === z.value ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100"
-                    )}
-                  >
-                    {z.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Rating */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Minimum Rating</p>
-              <div className="space-y-1">
-                <Link
-                  href={buildUrl({ rating: undefined, page: 1 })}
-                  className={cn("block px-3 py-2 rounded-lg text-sm transition-colors", !params.rating ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100")}
-                >
-                  Any Rating
-                </Link>
-                {RATINGS.map((r) => (
-                  <Link
-                    key={r.value}
-                    href={buildUrl({ rating: r.value, page: 1 })}
-                    className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors", params.rating === r.value ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100")}
-                  >
-                    <Star className={cn("w-3.5 h-3.5", params.rating === r.value ? "fill-white text-white" : "fill-yellow-400 text-yellow-400")} />
-                    {r.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Price range */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Price (₦)</p>
-              <form method="GET" action="/products" className="space-y-2">
-                {q        && <input type="hidden" name="q"        value={q} />}
-                {category && category !== "All" && <input type="hidden" name="category" value={category} />}
-                {zone     && <input type="hidden" name="zone"     value={zone} />}
-                {sort     && sort !== "newest" && <input type="hidden" name="sort" value={sort} />}
-                {type     && <input type="hidden" name="type"     value={type} />}
-                {params.rating && <input type="hidden" name="rating" value={params.rating} />}
-                {inStock  && <input type="hidden" name="inStock"  value="1" />}
-                <input
-                  name="minPrice" type="number" placeholder="Min"
-                  defaultValue={minPrice}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <input
-                  name="maxPrice" type="number" placeholder="Max"
-                  defaultValue={maxPrice}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Apply
-                </button>
-              </form>
-            </div>
-
-            {/* In Stock */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Availability</p>
-              <Link
-                href={buildUrl({ inStock: inStock ? undefined : "1", page: 1 })}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors",
-                  inStock ? "bg-primary-600 text-white border-primary-600" : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                )}
-              >
-                <div className={cn("w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0", inStock ? "bg-white border-white" : "border-gray-400")}>
-                  {inStock && <div className="w-2 h-2 bg-primary-600 rounded-sm" />}
                 </div>
-                In Stock Only
-              </Link>
+                {!type && (
+                  <p className="text-xs text-gray-500 mt-2">Showing both physical and digital products</p>
+                )}
+              </div>
+
+              {/* Categories: hierarchical, collapsible */}
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <h3 className="text-sm font-semibold mb-3">Categories</h3>
+                <div className="space-y-2">
+                  {taxonomy.menu.map((m: any, mi: number) => (
+                    <div key={mi} className="border-b last:border-b-0 pb-3">
+                      {m.columns.map((col: any, ci: number) => (
+                        <details key={ci} className="group" open={col.heading === category}>
+                          <summary className={cn("cursor-pointer list-none text-sm font-semibold px-2 py-1 rounded-md", col.heading === category ? "text-primary-700" : "text-gray-800 hover:text-primary-600")}>{col.heading}</summary>
+                          <div className="mt-2 ml-2">
+                            <div className="mb-2">
+                              <Link href={buildUrl({ category: col.heading, subcategory: undefined, page: 1 })} className="text-xs text-gray-500 hover:underline">View all {col.heading}</Link>
+                            </div>
+                            <ul className="space-y-1">
+                              {(col.items || []).map((it: any, ii: number) => (
+                                <li key={ii} className="pl-2">
+                                  <Link
+                                    href={buildUrl({ category: col.heading, subcategory: it.title, page: 1 })}
+                                    className={cn(
+                                      "text-sm block px-2 py-1 rounded-md",
+                                      subcategory === it.title && category === col.heading ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50"
+                                    )}
+                                  >
+                                    {it.title}
+                                  </Link>
+                                  {it.children && (
+                                    <ul className="ml-3 mt-1 space-y-1">
+                                      {it.children.map((ch: any, chi: number) => (
+                                        <li key={chi}>
+                                          <Link
+                                            href={buildUrl({ category: col.heading, subcategory: ch.title, page: 1 })}
+                                            className={cn(
+                                              "text-sm block px-2 py-1 rounded-md text-gray-600",
+                                              subcategory === ch.title && category === col.heading ? "bg-primary-50 text-primary-700" : "hover:bg-gray-50"
+                                            )}
+                                          >
+                                            ↳ {ch.title}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Facets: Ships To, Rating, Price, Availability */}
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <div className="space-y-4">
+                  <details className="group" open>
+                    <summary className="cursor-pointer text-sm font-semibold">Ships To</summary>
+                    <div className="mt-2 space-y-2">
+                      <Link href={buildUrl({ zone: undefined, page: 1 })} className={cn("block text-sm px-2 py-1 rounded-md", !zone ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50")}>
+                        All Regions
+                      </Link>
+                      {ZONES.map((z) => (
+                        <Link key={z.value} href={buildUrl({ zone: z.value, page: 1 })} className={cn("block text-sm px-2 py-1 rounded-md", zone === z.value ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50")}>
+                          {z.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+
+                  <details className="group">
+                    <summary className="cursor-pointer text-sm font-semibold">Minimum Rating</summary>
+                    <div className="mt-2 space-y-2">
+                      <Link href={buildUrl({ rating: undefined, page: 1 })} className={cn("block text-sm px-2 py-1 rounded-md", !params.rating ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50")}>
+                        Any Rating
+                      </Link>
+                      {RATINGS.map((r) => (
+                        <Link key={r.value} href={buildUrl({ rating: r.value, page: 1 })} className={cn("block text-sm px-2 py-1 rounded-md", params.rating === r.value ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50")}>
+                          {r.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+
+                  <details className="group">
+                    <summary className="cursor-pointer text-sm font-semibold">Price</summary>
+                    <div className="mt-2">
+                      <form
+                        method="GET"
+                        action="/products"
+                        className="space-y-2"
+                      >
+                        <input name="category" type="hidden" value={category === "All" ? "" : category} />
+                        <input name="minPrice" type="number" placeholder="Min" defaultValue={minPrice ?? ""} className="w-full px-2 py-1 rounded border border-gray-200 text-sm" />
+                        <input name="maxPrice" type="number" placeholder="Max" defaultValue={maxPrice ?? ""} className="w-full px-2 py-1 rounded border border-gray-200 text-sm" />
+                        <button type="submit" className="w-full py-2 mt-1 bg-gray-900 text-white text-sm font-semibold rounded-lg">Apply</button>
+                      </form>
+                    </div>
+                  </details>
+
+                  <details className="group">
+                    <summary className="cursor-pointer text-sm font-semibold">Availability</summary>
+                    <div className="mt-2">
+                      <Link href={buildUrl({ inStock: inStock ? undefined : "1", page: 1 })} className={cn("block text-sm px-2 py-1 rounded-md", inStock ? "bg-primary-50 text-primary-700" : "text-gray-700 hover:bg-gray-50")}>
+                        In Stock Only
+                      </Link>
+                    </div>
+                  </details>
+                </div>
+              </div>
             </div>
           </aside>
 
-          {/* ── Main content ── */}
+          {/* mobile drawer */}
+          <div className="lg:hidden">
+            <FilterDrawer />
+          </div>
+
           <div className="flex-1 min-w-0">
+            {/* Page title */}
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Browse {type ? (type === "DIGITAL" ? "Digital" : "Physical") : "All"} Products
+              </h1>
+              {!type && (
+                <p className="text-sm text-gray-500 mt-1">Includes both physical and digital products.</p>
+              )}
+            </div>
             {/* toolbar */}
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm text-gray-600">
@@ -352,14 +392,13 @@ export default async function ProductsPage({ searchParams }: Props) {
                 {q && <span className="ml-1">for &ldquo;<span className="text-primary-600">{q}</span>&rdquo;</span>}
               </p>
               <div className="flex items-center gap-3">
-                {/* mobile filter — FilterDrawer handles its own trigger */}
-                <FilterDrawer />
-                {/* sort */}
                 <SortSelect current={sort} />
               </div>
             </div>
 
-            {/* ── Active filter chips ── */}
+            
+
+            {/* active chips */}
             {activeFilters.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {activeFilters.map((f) => (
@@ -373,12 +412,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                   </Link>
                 ))}
                 {activeFilters.length > 1 && (
-                  <Link
-                    href="/products"
-                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    Clear all
-                  </Link>
+                  <Link href="/products" className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors">Clear all</Link>
                 )}
               </div>
             )}
@@ -392,7 +426,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                 <Link href="/products" className="mt-4 text-sm text-primary-600 hover:underline">Clear all filters</Link>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 {products.map((product) => {
                   const avg = avgRating(product.reviews);
                   const img = product.images[0];
@@ -452,13 +486,9 @@ export default async function ProductsPage({ searchParams }: Props) {
                         <p className="text-xs text-gray-500 truncate">{product.category}</p>
                         <p className="text-sm font-semibold text-gray-900 mt-0.5 line-clamp-2 leading-snug">{product.title}</p>
                         <div className="flex items-baseline gap-2 mt-2">
-                          <p className="text-base font-bold text-primary-600">
-                            ₦{product.price.toLocaleString()}
-                          </p>
+                          <p className="text-base font-bold text-primary-600">₦{product.price.toLocaleString()}</p>
                           {onSale && (
-                            <p className="text-xs text-gray-400 line-through">
-                              ₦{product.compareAtPrice!.toLocaleString()}
-                            </p>
+                            <p className="text-xs text-gray-400 line-through">₦{product.compareAtPrice!.toLocaleString()}</p>
                           )}
                         </div>
                         <div className="flex items-center justify-between mt-2">

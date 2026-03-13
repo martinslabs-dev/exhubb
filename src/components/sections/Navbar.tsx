@@ -20,45 +20,61 @@ import Image from "next/image";
 import { getCartCountAction } from "@/lib/actions/cart";
 
 const DRAWER_ICON_MAP: Record<string, LucideIcon> = {
-  ShoppingBag, Briefcase, Flame, TrendingUp, Store, HelpCircle,
+  ShoppingBag, Briefcase, Flame, TrendingUp, Store, HelpCircle, FileDown,
 };
 
-// ── Amazon-style grouped menu data ────────────────────────────
+// ── Amazon-style grouped menu data (normalized shape used by the dropdown)
 const CATEGORY_GROUPS = [
   {
-    heading: "Shop by Category",
-    items: [
-      { label: "Electronics & Tech",  icon: Monitor,  href: "/products?category=Electronics"      },
-      { label: "Fashion & Apparel",   icon: Shirt,    href: "/products?category=Fashion"           },
-      { label: "Motors & Vehicles",   icon: Car,      href: "/products?category=Motors"            },
-      { label: "Home & Garden",       icon: Home,     href: "/products?category=Home+%26+Garden"   },
-      { label: "Sports & Outdoors",   icon: Dumbbell, href: "/products?category=Sports"            },
-      { label: "Beauty & Health",     icon: Heart,    href: "/products?category=Health+%26+Beauty" },
-      { label: "Books",               icon: BookOpen, href: "/products?category=Books"             },
-      { label: "Collectibles",        icon: Trophy,   href: "/products?category=Collectibles"      },
+    title: "Shop by Category",
+    columns: [
+      {
+        heading: "Popular",
+        items: [
+          { title: "Electronics & Tech", slug: "Electronics", link: "/products?category=Electronics" },
+          { title: "Phones & Accessories", slug: "Phones & Accessories", link: "/products?category=Phones+%26+Accessories" },
+          { title: "Fashion & Apparel", slug: "Fashion", link: "/products?category=Fashion" },
+          { title: "Motors & Vehicles", slug: "Motors", link: "/products?category=Motors" },
+          { title: "Home & Garden", slug: "Home & Garden", link: "/products?category=Home+%26+Garden" },
+          { title: "Sports & Outdoors", slug: "Sports", link: "/products?category=Sports" },
+          { title: "Beauty & Health", slug: "Health & Beauty", link: "/products?category=Health+%26+Beauty" },
+          { title: "Books", slug: "Books", link: "/products?category=Books" },
+          { title: "Collectibles", slug: "Collectibles", link: "/products?category=Collectibles" },
+        ],
+      },
     ],
   },
   {
-    heading: "Digital Marketplace",
+    title: "Digital Marketplace",
     badge: "New",
-    items: [
-      { label: "eBooks & Documents",  icon: BookOpen,   href: "/products?category=Digital+Products&type=ebook"    },
-      { label: "Software & Files",    icon: FileDown,   href: "/products?category=Digital+Products&type=software" },
-      { label: "Online Courses",      icon: PlayCircle, href: "/products?category=Digital+Products&type=course"   },
-      { label: "Digital Art",         icon: ImagePlay,  href: "/products?category=Digital+Products&type=art"      },
-      { label: "Music & Audio",       icon: Headphones, href: "/products?category=Digital+Products&type=music"    },
-      { label: "Templates & Docs",    icon: FileText,   href: "/products?category=Digital+Products&type=template" },
+    columns: [
+      {
+        heading: "Digital",
+        items: [
+          { title: "eBooks & Documents", slug: "ebooks", link: "/products?category=Digital+Products&type=ebook" },
+          { title: "Software & Files", slug: "software", link: "/products?category=Digital+Products&type=software" },
+          { title: "Online Courses", slug: "courses", link: "/products?category=Digital+Products&type=course" },
+          { title: "Digital Art", slug: "digital-art", link: "/products?category=Digital+Products&type=art" },
+          { title: "Music & Audio", slug: "music", link: "/products?category=Digital+Products&type=music" },
+          { title: "Templates & Docs", slug: "templates", link: "/products?category=Digital+Products&type=template" },
+        ],
+      },
     ],
   },
   {
-    heading: "Services",
-    items: [
-      { label: "Browse Freelancers",  icon: Briefcase,  href: "/services"                          },
-      { label: "Design & Creative",   icon: Palette,    href: "/services?category=Design"          },
-      { label: "Tech & Development",  icon: Code2,      href: "/services?category=Tech"            },
-      { label: "Writing & Content",   icon: PenLine,    href: "/services?category=Writing"         },
-      { label: "Marketing",           icon: TrendingUp, href: "/services?category=Marketing"       },
-      { label: "Music & Audio",       icon: Music,      href: "/services?category=Music"           },
+    title: "Services",
+    columns: [
+      {
+        heading: "Services",
+        items: [
+          { title: "Browse Freelancers", slug: "freelancers", link: "/gigs" },
+          { title: "Design & Creative", slug: "design", link: "/gigs?category=Design" },
+          { title: "Tech & Development", slug: "tech", link: "/gigs?category=Tech" },
+          { title: "Writing & Content", slug: "writing", link: "/gigs?category=Writing" },
+          { title: "Marketing", slug: "marketing", link: "/gigs?category=Marketing" },
+          { title: "Music & Audio", slug: "music-audio", link: "/gigs?category=Music" },
+        ],
+      },
     ],
   },
 ];
@@ -76,6 +92,8 @@ export default function Navbar() {
   const [mobileSearch,  setMobileSearch]  = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [freshImage, setFreshImage] = useState<string | null | undefined>(undefined);
+  const [categoryGroups, setCategoryGroups] = useState<any[]>(CATEGORY_GROUPS);
+  const [mobileActiveGroup, setMobileActiveGroup] = useState<number | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -92,6 +110,31 @@ export default function Navbar() {
       if (d?.image !== undefined) setFreshImage(d.image);
     }).catch(() => {});
   }, [user?.email]);
+
+  // Load categories menu from API (falls back to hardcoded CATEGORY_GROUPS)
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/categories?menu=1")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!mounted || !data) return;
+        // If the API returned the repo-style menu (our columned JSON), use it directly
+        if (data.menu && Array.isArray(data.menu)) {
+          setCategoryGroups(data.menu);
+          return;
+        }
+
+        // If the API returned categories tree, convert to a single group with flattened children
+        if (data.categories && Array.isArray(data.categories)) {
+          const items = data.categories.flatMap((root: any) => {
+            if (root.children && root.children.length) return root.children.map((c: any) => ({ title: c.name, slug: c.slug ?? c.name }));
+            return [{ title: root.name, slug: root.slug ?? root.name }];
+          });
+          setCategoryGroups([{ title: "Shop by Category", columns: [{ heading: "All", items }] }]);
+        }
+      }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   // Use freshImage if loaded, else fall back to JWT image
   const avatarImage = freshImage !== undefined ? freshImage : user?.image;
@@ -161,11 +204,11 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.97 }}
                     transition={{ duration: 0.18 }}
-                    className="absolute left-0 top-full mt-2 w-[620px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    className="absolute left-0 top-full mt-2 w-[980px] max-w-[95vw] bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-visible z-50 max-h-[50vh] mega-menu"
+                    style={{ backgroundColor: '#ffffff' }}
                   >
-                    {/* Greeting row */}
                     {user && (
-                      <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2.5">
+                      <div className="px-5 py-3.5 bg-white border-b border-gray-100 flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-primary-100 overflow-hidden flex items-center justify-center shrink-0">
                           {avatarImage
                             ? <Image src={avatarImage} alt="" width={28} height={28} className="object-cover" />
@@ -175,39 +218,54 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    {/* Grouped columns */}
-                    <div className="grid grid-cols-3 divide-x divide-gray-100">
-                      {CATEGORY_GROUPS.map((group) => (
-                        <div key={group.heading} className="p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{group.heading}</p>
-                            {"badge" in group && group.badge && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded-full">{group.badge}</span>
-                            )}
+                    <div className="p-4 bg-white">
+                      <div className="grid grid-cols-3 gap-6">
+                        {categoryGroups.slice(0, 3).map((group, gi) => (
+                          <div key={group.title || gi} className="flex flex-col">
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">{group.title}</p>
+                            <div className="flex-1 overflow-y-auto max-h-[44vh] pr-2 bg-white">
+                              {(group.columns || []).map((col: any, ci: number) => (
+                                <div key={ci} className="mb-4">
+                                  <p className="text-sm font-semibold text-gray-800 mb-2">{col.heading}</p>
+                                  <ul className="space-y-1">
+                                    {(col.items || []).map((it: any) => (
+                                      <li key={it.slug || it.title} className="relative">
+                                        <div className="group inline-block">
+                                          <a
+                                            href={it.link ?? `/products?category=${encodeURIComponent(it.slug ?? it.title)}`}
+                                            onClick={() => setCatOpen(false)}
+                                            className="text-sm text-gray-700 hover:text-primary-700 block py-1"
+                                          >
+                                            {it.title}
+                                          </a>
+
+                                          {it.children && it.children.length > 0 && (
+                                            <div className="hidden group-hover:block absolute left-full top-0 ml-2 w-48 max-h-[40vh] overflow-auto bg-white p-3 rounded-md shadow-lg border border-gray-100 z-50">
+                                              {(it.children || []).map((child: any) => (
+                                                <a
+                                                  key={child.slug || child.title}
+                                                  href={`/products?category=${encodeURIComponent(child.slug ?? child.title)}`}
+                                                  onClick={() => setCatOpen(false)}
+                                                  className="block text-sm text-gray-600 hover:text-primary-700 py-1"
+                                                >
+                                                  {child.title}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <div className="space-y-0.5">
-                            {group.items.map((item) => {
-                              const Icon = item.icon;
-                              return (
-                                <motion.a
-                                  key={item.label}
-                                  href={item.href}
-                                  whileHover={{ x: 3, backgroundColor: "rgba(240,253,244,1)" }}
-                                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm text-gray-700 hover:text-primary-700 transition-colors"
-                                  onClick={() => setCatOpen(false)}
-                                >
-                                  <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                                  <span className="truncate">{item.label}</span>
-                                  <ChevronDown className="w-3 h-3 text-gray-300 ml-auto -rotate-90 flex-shrink-0" />
-                                </motion.a>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between bg-gray-50">
+                    <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between bg-white">
                       <a href="/products" className="text-xs font-semibold text-primary-700 hover:text-primary-800 transition-colors flex items-center gap-1">
                         Browse all products <ArrowRight className="w-3 h-3" />
                       </a>
@@ -488,29 +546,68 @@ export default function Navbar() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-4 space-y-1">
-                {[
-                  { icon: "ShoppingBag", label: "Browse Products",  href: "/products"          },
-                  { icon: "Briefcase",   label: "Browse Services",  href: "/services"          },
-                  { icon: "Flame",       label: "Today's Deals",    href: "/products?sort=newest" },
-                  { icon: "TrendingUp",  label: "Trending",         href: "/products?sort=popular" },
-                  { icon: "Store",       label: "Become a Seller",  href: "/register?intent=seller" },
-                  { icon: "HelpCircle",  label: "Help & Support",   href: "/help"              },
-                ].map((item) => {
-                  const DrawerIcon = DRAWER_ICON_MAP[item.icon];
-                  return (
-                  <motion.a
-                    key={item.label}
-                    href={item.href}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <DrawerIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium">{item.label}</span>
-                  </motion.a>
-                  );
-                })}
+              <div className="p-4">
+                {/* Mobile drill-down: show top groups or active group's columns */}
+                {!mobileActiveGroup && (
+                  <div className="space-y-1">
+                    {categoryGroups.map((g, idx) => (
+                      <motion.button
+                        key={g.title || idx}
+                        onClick={() => setMobileActiveGroup(idx)}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          <span className="font-medium">{g.title}</span>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
+
+                {mobileActiveGroup !== null && categoryGroups[mobileActiveGroup] && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <button onClick={() => setMobileActiveGroup(null)} className="text-sm text-primary-600 font-semibold">Back</button>
+                      <p className="text-sm font-bold">{categoryGroups[mobileActiveGroup].title}</p>
+                    </div>
+                    <div className="space-y-2">
+                      {(categoryGroups[mobileActiveGroup].columns || []).map((col: any, ci: number) => (
+                        <div key={ci} className="pb-2 border-b border-gray-100">
+                          <p className="text-xs font-semibold text-gray-500 mb-1">{col.heading}</p>
+                          {(col.items || []).map((it: any, ii: number) => (
+                            <div key={it.slug || ii}>
+                              <a
+                                href={it.link ?? `/products?category=${encodeURIComponent(it.slug ?? it.title)}`}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center justify-between px-2 py-2 text-sm text-gray-700 hover:text-primary-700"
+                              >
+                                <span>{it.title}</span>
+                                {it.children && it.children.length ? <ChevronDown className="w-4 h-4 text-gray-400" /> : null}
+                              </a>
+                                            {it.children && it.children.length > 0 && (
+                                            <div className="pl-3">
+                                  {(it.children || []).map((child: any) => (
+                                    <a
+                                      key={child.slug || child.title}
+                                      href={`/products?category=${encodeURIComponent(child.slug ?? child.title)}`}
+                                      onClick={() => setMobileOpen(false)}
+                                      className="block px-2 py-1 text-sm text-gray-600 hover:text-primary-700"
+                                    >
+                                      {child.title}
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-4 border-t border-gray-100 space-y-2">
                 {user ? (

@@ -1,0 +1,21 @@
+%% Client onboarding, connect, and billing usage flow
+sequenceDiagram
+  participant U as User (Client)
+  participant CP as Control Plane
+  participant BILL as Stripe
+  participant NODE as VPN Node
+  participant DB as Postgres
+
+  U->>CP: Sign up + choose plan
+  CP->>BILL: create subscription
+  BILL-->>CP: subscription active
+  CP->>DB: create user record
+  CP->>CP: generate credentials (keys)
+  CP-->>U: deliver config (QR / download)
+  U->>NODE: connect using config
+  NODE-->>CP: session start + periodic usage reports
+  CP->>DB: record session & usage
+  CP->>BILL: (optional) metered billing report
+  U->>CP: disconnect
+  NODE-->>CP: session end
+  CP->>DB: finalize usage

@@ -129,14 +129,20 @@ body {
   color: #15803d;
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; }
+/* ── Scrollbar (subtle neutral styling for professional look) ─── */
+/* Use a neutral thin thumb by default; accent scrollbars can use specific classes when needed */
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(21, 128, 61, 0.35);
-  border-radius: 99px;
+  background: rgba(0,0,0,0.12);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.02);
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(21, 128, 61, 0.65); }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.18); }
+
+/* Optional class for accented scrollbars (green) */
+.accent-scroll::-webkit-scrollbar-thumb { background: rgba(21,128,61,0.35); }
+.accent-scroll::-webkit-scrollbar-thumb:hover { background: rgba(21,128,61,0.65); }
 
 /* ── Lenis smooth scroll ────────────────────────────────────── */
 html.lenis, html.lenis body { height: auto; }
@@ -325,4 +331,11 @@ html.lenis, html.lenis body { height: auto; }
 /* ── Hide scrollbar (horizontal carousels) ──────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Defensive rule: ensure mega-menu renders as a fully opaque white block */
+.mega-menu, .mega-menu * {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 

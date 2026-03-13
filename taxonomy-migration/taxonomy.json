@@ -1,0 +1,1543 @@
+{
+  "name": "Converted Taxonomy (from categories_menu.json)",
+  "version": "1.0",
+  "topLevel": [
+    {
+      "id": "mobile-phones",
+      "name": "Mobile Phones",
+      "slug": "mobile-phones",
+      "children": [
+        {
+          "id": "smartphones",
+          "name": "Smartphones",
+          "slug": "smartphones",
+          "children": []
+        },
+        {
+          "id": "feature-phones",
+          "name": "Feature Phones",
+          "slug": "feature-phones",
+          "children": []
+        },
+        {
+          "id": "refurbished-phones",
+          "name": "Refurbished Phones",
+          "slug": "refurbished-phones",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "phone-accessories",
+      "name": "Phone Accessories",
+      "slug": "phone-accessories",
+      "children": [
+        {
+          "id": "phone-cases",
+          "name": "Phone Cases",
+          "slug": "phone-cases",
+          "children": []
+        },
+        {
+          "id": "chargers",
+          "name": "Chargers",
+          "slug": "chargers",
+          "children": []
+        },
+        {
+          "id": "power-banks",
+          "name": "Power Banks",
+          "slug": "power-banks",
+          "children": []
+        },
+        {
+          "id": "screen-protectors",
+          "name": "Screen Protectors",
+          "slug": "screen-protectors",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "computers-tablets",
+      "name": "Computers & Tablets",
+      "slug": "computers-tablets",
+      "children": [
+        {
+          "id": "laptops",
+          "name": "Laptops",
+          "slug": "laptops",
+          "children": []
+        },
+        {
+          "id": "desktop-computers",
+          "name": "Desktop Computers",
+          "slug": "desktop-computers",
+          "children": []
+        },
+        {
+          "id": "tablets",
+          "name": "Tablets",
+          "slug": "tablets",
+          "children": []
+        },
+        {
+          "id": "computer-monitors",
+          "name": "Computer Monitors",
+          "slug": "computer-monitors",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "computer-accessories",
+      "name": "Computer Accessories",
+      "slug": "computer-accessories",
+      "children": [
+        {
+          "id": "keyboards",
+          "name": "Keyboards",
+          "slug": "keyboards",
+          "children": []
+        },
+        {
+          "id": "mouse",
+          "name": "Mouse",
+          "slug": "mouse",
+          "children": []
+        },
+        {
+          "id": "external-hard-drives",
+          "name": "External Hard Drives",
+          "slug": "external-hard-drives",
+          "children": []
+        },
+        {
+          "id": "usb-devices",
+          "name": "USB Devices",
+          "slug": "usb-devices",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tv-home-audio",
+      "name": "TV & Home Audio",
+      "slug": "tv-home-audio",
+      "children": [
+        {
+          "id": "smart-tvs",
+          "name": "Smart TVs",
+          "slug": "smart-tvs",
+          "children": []
+        },
+        {
+          "id": "speakers",
+          "name": "Speakers",
+          "slug": "speakers",
+          "children": []
+        },
+        {
+          "id": "soundbars",
+          "name": "Soundbars",
+          "slug": "soundbars",
+          "children": []
+        },
+        {
+          "id": "home-theater-systems",
+          "name": "Home Theater Systems",
+          "slug": "home-theater-systems",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "mens-clothing",
+      "name": "Men's Clothing",
+      "slug": "mens-clothing",
+      "children": [
+        {
+          "id": "shirts",
+          "name": "Shirts",
+          "slug": "shirts",
+          "children": []
+        },
+        {
+          "id": "t-shirts",
+          "name": "T-Shirts",
+          "slug": "t-shirts",
+          "children": []
+        },
+        {
+          "id": "jeans",
+          "name": "Jeans",
+          "slug": "jeans",
+          "children": []
+        },
+        {
+          "id": "jackets",
+          "name": "Jackets",
+          "slug": "jackets",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "womens-clothing",
+      "name": "Women's Clothing",
+      "slug": "womens-clothing",
+      "children": [
+        {
+          "id": "dresses",
+          "name": "Dresses",
+          "slug": "dresses",
+          "children": []
+        },
+        {
+          "id": "tops",
+          "name": "Tops",
+          "slug": "tops",
+          "children": []
+        },
+        {
+          "id": "skirts",
+          "name": "Skirts",
+          "slug": "skirts",
+          "children": []
+        },
+        {
+          "id": "handbags",
+          "name": "Handbags",
+          "slug": "handbags",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "shoes",
+      "name": "Shoes",
+      "slug": "shoes",
+      "children": [
+        {
+          "id": "sneakers",
+          "name": "Sneakers",
+          "slug": "sneakers",
+          "children": []
+        },
+        {
+          "id": "sandals",
+          "name": "Sandals",
+          "slug": "sandals",
+          "children": []
+        },
+        {
+          "id": "boots",
+          "name": "Boots",
+          "slug": "boots",
+          "children": []
+        },
+        {
+          "id": "formal-shoes",
+          "name": "Formal Shoes",
+          "slug": "formal-shoes",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "fashion-accessories",
+      "name": "Fashion Accessories",
+      "slug": "fashion-accessories",
+      "children": [
+        {
+          "id": "sunglasses",
+          "name": "Sunglasses",
+          "slug": "sunglasses",
+          "children": []
+        },
+        {
+          "id": "belts",
+          "name": "Belts",
+          "slug": "belts",
+          "children": []
+        },
+        {
+          "id": "hats",
+          "name": "Hats",
+          "slug": "hats",
+          "children": []
+        },
+        {
+          "id": "scarves",
+          "name": "Scarves",
+          "slug": "scarves",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "furniture",
+      "name": "Furniture",
+      "slug": "furniture",
+      "children": [
+        {
+          "id": "sofas",
+          "name": "Sofas",
+          "slug": "sofas",
+          "children": []
+        },
+        {
+          "id": "beds",
+          "name": "Beds",
+          "slug": "beds",
+          "children": []
+        },
+        {
+          "id": "dining-tables",
+          "name": "Dining Tables",
+          "slug": "dining-tables",
+          "children": []
+        },
+        {
+          "id": "office-chairs",
+          "name": "Office Chairs",
+          "slug": "office-chairs",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "home-decor",
+      "name": "Home Decor",
+      "slug": "home-decor",
+      "children": [
+        {
+          "id": "wall-art",
+          "name": "Wall Art",
+          "slug": "wall-art",
+          "children": []
+        },
+        {
+          "id": "mirrors",
+          "name": "Mirrors",
+          "slug": "mirrors",
+          "children": []
+        },
+        {
+          "id": "rugs",
+          "name": "Rugs",
+          "slug": "rugs",
+          "children": []
+        },
+        {
+          "id": "lighting",
+          "name": "Lighting",
+          "slug": "lighting",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "kitchen-dining",
+      "name": "Kitchen & Dining",
+      "slug": "kitchen-dining",
+      "children": [
+        {
+          "id": "cookware",
+          "name": "Cookware",
+          "slug": "cookware",
+          "children": []
+        },
+        {
+          "id": "kitchen-tools",
+          "name": "Kitchen Tools",
+          "slug": "kitchen-tools",
+          "children": []
+        },
+        {
+          "id": "coffee-makers",
+          "name": "Coffee Makers",
+          "slug": "coffee-makers",
+          "children": []
+        },
+        {
+          "id": "dinnerware",
+          "name": "Dinnerware",
+          "slug": "dinnerware",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "garden-outdoor",
+      "name": "Garden & Outdoor",
+      "slug": "garden-outdoor",
+      "children": [
+        {
+          "id": "garden-tools",
+          "name": "Garden Tools",
+          "slug": "garden-tools",
+          "children": []
+        },
+        {
+          "id": "plants",
+          "name": "Plants",
+          "slug": "plants",
+          "children": []
+        },
+        {
+          "id": "outdoor-furniture",
+          "name": "Outdoor Furniture",
+          "slug": "outdoor-furniture",
+          "children": []
+        },
+        {
+          "id": "bbq-equipment",
+          "name": "BBQ Equipment",
+          "slug": "bbq-equipment",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "coins-currency",
+      "name": "Coins & Currency",
+      "slug": "coins-currency",
+      "children": [
+        {
+          "id": "rare-coins",
+          "name": "Rare Coins",
+          "slug": "rare-coins",
+          "children": []
+        },
+        {
+          "id": "banknotes",
+          "name": "Banknotes",
+          "slug": "banknotes",
+          "children": []
+        },
+        {
+          "id": "coin-sets",
+          "name": "Coin Sets",
+          "slug": "coin-sets",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "stamps",
+      "name": "Stamps",
+      "slug": "stamps",
+      "children": [
+        {
+          "id": "vintage-stamps",
+          "name": "Vintage Stamps",
+          "slug": "vintage-stamps",
+          "children": []
+        },
+        {
+          "id": "stamp-collections",
+          "name": "Stamp Collections",
+          "slug": "stamp-collections",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "sports-memorabilia",
+      "name": "Sports Memorabilia",
+      "slug": "sports-memorabilia",
+      "children": [
+        {
+          "id": "signed-jerseys",
+          "name": "Signed Jerseys",
+          "slug": "signed-jerseys",
+          "children": []
+        },
+        {
+          "id": "trading-cards",
+          "name": "Trading Cards",
+          "slug": "trading-cards",
+          "children": []
+        },
+        {
+          "id": "vintage-equipment",
+          "name": "Vintage Equipment",
+          "slug": "vintage-equipment",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "art",
+      "name": "Art",
+      "slug": "art",
+      "children": [
+        {
+          "id": "paintings",
+          "name": "Paintings",
+          "slug": "paintings",
+          "children": []
+        },
+        {
+          "id": "sculptures",
+          "name": "Sculptures",
+          "slug": "sculptures",
+          "children": []
+        },
+        {
+          "id": "prints",
+          "name": "Prints",
+          "slug": "prints",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "fitness-equipment",
+      "name": "Fitness Equipment",
+      "slug": "fitness-equipment",
+      "children": [
+        {
+          "id": "dumbbells",
+          "name": "Dumbbells",
+          "slug": "dumbbells",
+          "children": []
+        },
+        {
+          "id": "treadmills",
+          "name": "Treadmills",
+          "slug": "treadmills",
+          "children": []
+        },
+        {
+          "id": "exercise-bikes",
+          "name": "Exercise Bikes",
+          "slug": "exercise-bikes",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "outdoor-sports",
+      "name": "Outdoor Sports",
+      "slug": "outdoor-sports",
+      "children": [
+        {
+          "id": "camping-gear",
+          "name": "Camping Gear",
+          "slug": "camping-gear",
+          "children": []
+        },
+        {
+          "id": "hiking-equipment",
+          "name": "Hiking Equipment",
+          "slug": "hiking-equipment",
+          "children": []
+        },
+        {
+          "id": "climbing-gear",
+          "name": "Climbing Gear",
+          "slug": "climbing-gear",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "team-sports",
+      "name": "Team Sports",
+      "slug": "team-sports",
+      "children": [
+        {
+          "id": "football-gear",
+          "name": "Football Gear",
+          "slug": "football-gear",
+          "children": []
+        },
+        {
+          "id": "basketball-equipment",
+          "name": "Basketball Equipment",
+          "slug": "basketball-equipment",
+          "children": []
+        },
+        {
+          "id": "volleyball-equipment",
+          "name": "Volleyball Equipment",
+          "slug": "volleyball-equipment",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "toys",
+      "name": "Toys",
+      "slug": "toys",
+      "children": [
+        {
+          "id": "dolls",
+          "name": "Dolls",
+          "slug": "dolls",
+          "children": []
+        },
+        {
+          "id": "action-figures",
+          "name": "Action Figures",
+          "slug": "action-figures",
+          "children": []
+        },
+        {
+          "id": "educational-toys",
+          "name": "Educational Toys",
+          "slug": "educational-toys",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "hobby-supplies",
+      "name": "Hobby Supplies",
+      "slug": "hobby-supplies",
+      "children": [
+        {
+          "id": "model-kits",
+          "name": "Model Kits",
+          "slug": "model-kits",
+          "children": []
+        },
+        {
+          "id": "rc-cars",
+          "name": "RC Cars",
+          "slug": "rc-cars",
+          "children": []
+        },
+        {
+          "id": "craft-kits",
+          "name": "Craft Kits",
+          "slug": "craft-kits",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "board-games",
+      "name": "Board Games",
+      "slug": "board-games",
+      "children": [
+        {
+          "id": "strategy-games",
+          "name": "Strategy Games",
+          "slug": "strategy-games",
+          "children": []
+        },
+        {
+          "id": "family-games",
+          "name": "Family Games",
+          "slug": "family-games",
+          "children": []
+        },
+        {
+          "id": "card-games",
+          "name": "Card Games",
+          "slug": "card-games",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "fine-jewelry",
+      "name": "Fine Jewelry",
+      "slug": "fine-jewelry",
+      "children": [
+        {
+          "id": "gold-jewelry",
+          "name": "Gold Jewelry",
+          "slug": "gold-jewelry",
+          "children": []
+        },
+        {
+          "id": "diamond-jewelry",
+          "name": "Diamond Jewelry",
+          "slug": "diamond-jewelry",
+          "children": []
+        },
+        {
+          "id": "silver-jewelry",
+          "name": "Silver Jewelry",
+          "slug": "silver-jewelry",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "fashion-jewelry",
+      "name": "Fashion Jewelry",
+      "slug": "fashion-jewelry",
+      "children": [
+        {
+          "id": "necklaces",
+          "name": "Necklaces",
+          "slug": "necklaces",
+          "children": []
+        },
+        {
+          "id": "bracelets",
+          "name": "Bracelets",
+          "slug": "bracelets",
+          "children": []
+        },
+        {
+          "id": "earrings",
+          "name": "Earrings",
+          "slug": "earrings",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "watches",
+      "name": "Watches",
+      "slug": "watches",
+      "children": [
+        {
+          "id": "luxury-watches",
+          "name": "Luxury Watches",
+          "slug": "luxury-watches",
+          "children": []
+        },
+        {
+          "id": "smart-watches",
+          "name": "Smart Watches",
+          "slug": "smart-watches",
+          "children": []
+        },
+        {
+          "id": "casual-watches",
+          "name": "Casual Watches",
+          "slug": "casual-watches",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "skincare",
+      "name": "Skincare",
+      "slug": "skincare",
+      "children": [
+        {
+          "id": "face-cream",
+          "name": "Face Cream",
+          "slug": "face-cream",
+          "children": []
+        },
+        {
+          "id": "face-wash",
+          "name": "Face Wash",
+          "slug": "face-wash",
+          "children": []
+        },
+        {
+          "id": "sunscreen",
+          "name": "Sunscreen",
+          "slug": "sunscreen",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "makeup",
+      "name": "Makeup",
+      "slug": "makeup",
+      "children": [
+        {
+          "id": "lipstick",
+          "name": "Lipstick",
+          "slug": "lipstick",
+          "children": []
+        },
+        {
+          "id": "foundation",
+          "name": "Foundation",
+          "slug": "foundation",
+          "children": []
+        },
+        {
+          "id": "mascara",
+          "name": "Mascara",
+          "slug": "mascara",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "hair-care",
+      "name": "Hair Care",
+      "slug": "hair-care",
+      "children": [
+        {
+          "id": "shampoo",
+          "name": "Shampoo",
+          "slug": "shampoo",
+          "children": []
+        },
+        {
+          "id": "hair-oil",
+          "name": "Hair Oil",
+          "slug": "hair-oil",
+          "children": []
+        },
+        {
+          "id": "hair-styling-tools",
+          "name": "Hair Styling Tools",
+          "slug": "hair-styling-tools",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "office-equipment",
+      "name": "Office Equipment",
+      "slug": "office-equipment",
+      "children": [
+        {
+          "id": "printers",
+          "name": "Printers",
+          "slug": "printers",
+          "children": []
+        },
+        {
+          "id": "scanners",
+          "name": "Scanners",
+          "slug": "scanners",
+          "children": []
+        },
+        {
+          "id": "copiers",
+          "name": "Copiers",
+          "slug": "copiers",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "industrial-equipment",
+      "name": "Industrial Equipment",
+      "slug": "industrial-equipment",
+      "children": [
+        {
+          "id": "machinery",
+          "name": "Machinery",
+          "slug": "machinery",
+          "children": []
+        },
+        {
+          "id": "generators",
+          "name": "Generators",
+          "slug": "generators",
+          "children": []
+        },
+        {
+          "id": "tools",
+          "name": "Tools",
+          "slug": "tools",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "restaurant-equipment",
+      "name": "Restaurant Equipment",
+      "slug": "restaurant-equipment",
+      "children": [
+        {
+          "id": "commercial-ovens",
+          "name": "Commercial Ovens",
+          "slug": "commercial-ovens",
+          "children": []
+        },
+        {
+          "id": "refrigerators",
+          "name": "Refrigerators",
+          "slug": "refrigerators",
+          "children": []
+        },
+        {
+          "id": "kitchen-equipment",
+          "name": "Kitchen Equipment",
+          "slug": "kitchen-equipment",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "baby-clothing",
+      "name": "Baby Clothing",
+      "slug": "baby-clothing",
+      "children": []
+    },
+    {
+      "id": "baby-toys",
+      "name": "Baby Toys",
+      "slug": "baby-toys",
+      "children": []
+    },
+    {
+      "id": "diapers",
+      "name": "Diapers",
+      "slug": "diapers",
+      "children": []
+    },
+    {
+      "id": "baby-strollers",
+      "name": "Baby Strollers",
+      "slug": "baby-strollers",
+      "children": []
+    },
+    {
+      "id": "baby-feeding",
+      "name": "Baby Feeding",
+      "slug": "baby-feeding",
+      "children": []
+    },
+    {
+      "id": "dog-supplies",
+      "name": "Dog Supplies",
+      "slug": "dog-supplies",
+      "children": [
+        {
+          "id": "dog-food",
+          "name": "Dog Food",
+          "slug": "dog-food",
+          "children": []
+        },
+        {
+          "id": "dog-toys",
+          "name": "Dog Toys",
+          "slug": "dog-toys",
+          "children": []
+        },
+        {
+          "id": "dog-beds",
+          "name": "Dog Beds",
+          "slug": "dog-beds",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cat-supplies",
+      "name": "Cat Supplies",
+      "slug": "cat-supplies",
+      "children": [
+        {
+          "id": "cat-food",
+          "name": "Cat Food",
+          "slug": "cat-food",
+          "children": []
+        },
+        {
+          "id": "cat-litter",
+          "name": "Cat Litter",
+          "slug": "cat-litter",
+          "children": []
+        },
+        {
+          "id": "cat-toys",
+          "name": "Cat Toys",
+          "slug": "cat-toys",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "books",
+      "name": "Books",
+      "slug": "books",
+      "children": [
+        {
+          "id": "fiction",
+          "name": "Fiction",
+          "slug": "fiction",
+          "children": []
+        },
+        {
+          "id": "educational",
+          "name": "Educational",
+          "slug": "educational",
+          "children": []
+        },
+        {
+          "id": "comics",
+          "name": "Comics",
+          "slug": "comics",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "movies",
+      "name": "Movies",
+      "slug": "movies",
+      "children": [
+        {
+          "id": "dvds",
+          "name": "DVDs",
+          "slug": "dvds",
+          "children": []
+        },
+        {
+          "id": "blu-ray",
+          "name": "Blu-ray",
+          "slug": "blu-ray",
+          "children": []
+        },
+        {
+          "id": "box-sets",
+          "name": "Box Sets",
+          "slug": "box-sets",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "slug": "music",
+      "children": [
+        {
+          "id": "cds",
+          "name": "CDs",
+          "slug": "cds",
+          "children": []
+        },
+        {
+          "id": "vinyl-records",
+          "name": "Vinyl Records",
+          "slug": "vinyl-records",
+          "children": []
+        },
+        {
+          "id": "instruments",
+          "name": "Instruments",
+          "slug": "instruments",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "cars",
+      "name": "Cars",
+      "slug": "cars",
+      "children": [
+        {
+          "id": "new-cars",
+          "name": "New Cars",
+          "slug": "new-cars",
+          "children": []
+        },
+        {
+          "id": "used-cars",
+          "name": "Used Cars",
+          "slug": "used-cars",
+          "children": []
+        },
+        {
+          "id": "electric-cars",
+          "name": "Electric Cars",
+          "slug": "electric-cars",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "motorcycles",
+      "name": "Motorcycles",
+      "slug": "motorcycles",
+      "children": [
+        {
+          "id": "sport-bikes",
+          "name": "Sport Bikes",
+          "slug": "sport-bikes",
+          "children": []
+        },
+        {
+          "id": "scooters",
+          "name": "Scooters",
+          "slug": "scooters",
+          "children": []
+        },
+        {
+          "id": "electric-bikes",
+          "name": "Electric Bikes",
+          "slug": "electric-bikes",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "car-parts",
+      "name": "Car Parts",
+      "slug": "car-parts",
+      "children": [
+        {
+          "id": "engines",
+          "name": "Engines",
+          "slug": "engines",
+          "children": []
+        },
+        {
+          "id": "brakes",
+          "name": "Brakes",
+          "slug": "brakes",
+          "children": []
+        },
+        {
+          "id": "suspension",
+          "name": "Suspension",
+          "slug": "suspension",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "car-accessories",
+      "name": "Car Accessories",
+      "slug": "car-accessories",
+      "children": [
+        {
+          "id": "seat-covers",
+          "name": "Seat Covers",
+          "slug": "seat-covers",
+          "children": []
+        },
+        {
+          "id": "car-chargers",
+          "name": "Car Chargers",
+          "slug": "car-chargers",
+          "children": []
+        },
+        {
+          "id": "dash-cameras",
+          "name": "Dash Cameras",
+          "slug": "dash-cameras",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "residential-properties",
+      "name": "Residential Properties",
+      "slug": "residential-properties",
+      "children": [
+        {
+          "id": "houses",
+          "name": "Houses",
+          "slug": "houses",
+          "children": []
+        },
+        {
+          "id": "apartments",
+          "name": "Apartments",
+          "slug": "apartments",
+          "children": []
+        },
+        {
+          "id": "condos",
+          "name": "Condos",
+          "slug": "condos",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "commercial-properties",
+      "name": "Commercial Properties",
+      "slug": "commercial-properties",
+      "children": [
+        {
+          "id": "offices",
+          "name": "Offices",
+          "slug": "offices",
+          "children": []
+        },
+        {
+          "id": "shops",
+          "name": "Shops",
+          "slug": "shops",
+          "children": []
+        },
+        {
+          "id": "warehouses",
+          "name": "Warehouses",
+          "slug": "warehouses",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "slug": "travel",
+      "children": [
+        {
+          "id": "flights",
+          "name": "Flights",
+          "slug": "flights",
+          "children": []
+        },
+        {
+          "id": "hotels",
+          "name": "Hotels",
+          "slug": "hotels",
+          "children": []
+        },
+        {
+          "id": "vacation-packages",
+          "name": "Vacation Packages",
+          "slug": "vacation-packages",
+          "children": []
+        },
+        {
+          "id": "tour-tickets",
+          "name": "Tour Tickets",
+          "slug": "tour-tickets",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "desktop-software",
+      "name": "Desktop Software",
+      "slug": "desktop-software",
+      "children": [
+        {
+          "id": "productivity-software",
+          "name": "Productivity Software",
+          "slug": "productivity-software",
+          "children": []
+        },
+        {
+          "id": "office-software",
+          "name": "Office Software",
+          "slug": "office-software",
+          "children": []
+        },
+        {
+          "id": "accounting-software",
+          "name": "Accounting Software",
+          "slug": "accounting-software",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "business-software",
+      "name": "Business Software",
+      "slug": "business-software",
+      "children": [
+        {
+          "id": "crm-systems",
+          "name": "CRM Systems",
+          "slug": "crm-systems",
+          "children": []
+        },
+        {
+          "id": "erp-software",
+          "name": "ERP Software",
+          "slug": "erp-software",
+          "children": []
+        },
+        {
+          "id": "inventory-management",
+          "name": "Inventory Management",
+          "slug": "inventory-management",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "developer-tools",
+      "name": "Developer Tools",
+      "slug": "developer-tools",
+      "children": [
+        {
+          "id": "ide-tools",
+          "name": "IDE Tools",
+          "slug": "ide-tools",
+          "children": []
+        },
+        {
+          "id": "code-editors",
+          "name": "Code Editors",
+          "slug": "code-editors",
+          "children": []
+        },
+        {
+          "id": "api-tools",
+          "name": "API Tools",
+          "slug": "api-tools",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "security-software",
+      "name": "Security Software",
+      "slug": "security-software",
+      "children": [
+        {
+          "id": "antivirus",
+          "name": "Antivirus",
+          "slug": "antivirus",
+          "children": []
+        },
+        {
+          "id": "vpn-software",
+          "name": "VPN Software",
+          "slug": "vpn-software",
+          "children": []
+        },
+        {
+          "id": "encryption-tools",
+          "name": "Encryption Tools",
+          "slug": "encryption-tools",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "mobile-apps",
+      "name": "Mobile Apps",
+      "slug": "mobile-apps",
+      "children": [
+        {
+          "id": "android-apps",
+          "name": "Android Apps",
+          "slug": "android-apps",
+          "children": []
+        },
+        {
+          "id": "ios-apps",
+          "name": "iOS Apps",
+          "slug": "ios-apps",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "games",
+      "name": "Games",
+      "slug": "games",
+      "children": [
+        {
+          "id": "pc-games",
+          "name": "PC Games",
+          "slug": "pc-games",
+          "children": []
+        },
+        {
+          "id": "mobile-games",
+          "name": "Mobile Games",
+          "slug": "mobile-games",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "game-assets",
+      "name": "Game Assets",
+      "slug": "game-assets",
+      "children": [
+        {
+          "id": "3d-game-models",
+          "name": "3D Game Models",
+          "slug": "3d-game-models",
+          "children": []
+        },
+        {
+          "id": "game-characters",
+          "name": "Game Characters",
+          "slug": "game-characters",
+          "children": []
+        },
+        {
+          "id": "game-sound-effects",
+          "name": "Game Sound Effects",
+          "slug": "game-sound-effects",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "ebooks",
+      "name": "Ebooks",
+      "slug": "ebooks",
+      "children": [
+        {
+          "id": "ebooks-fiction",
+          "name": "Fiction",
+          "slug": "ebooks-fiction",
+          "children": []
+        },
+        {
+          "id": "ebooks-nonfiction",
+          "name": "Non-Fiction",
+          "slug": "ebooks-nonfiction",
+          "children": []
+        },
+        {
+          "id": "ebooks-academic",
+          "name": "Academic",
+          "slug": "ebooks-academic",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "online-courses",
+      "name": "Online Courses",
+      "slug": "online-courses",
+      "children": [
+        {
+          "id": "tech-courses",
+          "name": "Technology Courses",
+          "slug": "tech-courses",
+          "children": []
+        },
+        {
+          "id": "business-courses",
+          "name": "Business Courses",
+          "slug": "business-courses",
+          "children": []
+        },
+        {
+          "id": "creative-courses",
+          "name": "Creative Courses",
+          "slug": "creative-courses",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "music-videos",
+      "name": "Music & Videos",
+      "slug": "music-videos",
+      "children": [
+        {
+          "id": "music-tracks",
+          "name": "Music Tracks",
+          "slug": "music-tracks",
+          "children": []
+        },
+        {
+          "id": "stock-videos",
+          "name": "Videos",
+          "slug": "stock-videos",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "web-development",
+      "name": "Web Development",
+      "slug": "web-development",
+      "children": []
+    },
+    {
+      "id": "mobile-app-development",
+      "name": "Mobile App Development",
+      "slug": "mobile-app-development",
+      "children": []
+    },
+    {
+      "id": "software-development",
+      "name": "Software Development",
+      "slug": "software-development",
+      "children": []
+    },
+    {
+      "id": "blockchain-web3",
+      "name": "Blockchain & Web3",
+      "slug": "blockchain-web3",
+      "children": []
+    },
+    {
+      "id": "it-networking",
+      "name": "IT & Networking",
+      "slug": "it-networking",
+      "children": []
+    },
+    {
+      "id": "graphic-design",
+      "name": "Graphic Design",
+      "slug": "graphic-design",
+      "children": []
+    },
+    {
+      "id": "ui-ux-design",
+      "name": "UI / UX Design",
+      "slug": "ui-ux-design",
+      "children": []
+    },
+    {
+      "id": "video-animation",
+      "name": "Video & Animation",
+      "slug": "video-animation",
+      "children": []
+    },
+    {
+      "id": "illustration-art",
+      "name": "Illustration & Art",
+      "slug": "illustration-art",
+      "children": []
+    },
+    {
+      "id": "marketing-advertising",
+      "name": "Marketing & Advertising",
+      "slug": "marketing-advertising",
+      "children": []
+    },
+    {
+      "id": "writing-content",
+      "name": "Writing & Content",
+      "slug": "writing-content",
+      "children": []
+    },
+    {
+      "id": "personal-services",
+      "name": "Personal Services",
+      "slug": "personal-services",
+      "children": []
+    },
+    {
+      "id": "home-services",
+      "name": "Home Services",
+      "slug": "home-services",
+      "children": []
+    },
+    {
+      "id": "transport-services",
+      "name": "Transport Services",
+      "slug": "transport-services",
+      "children": [
+        {
+          "id": "delivery",
+          "name": "Delivery",
+          "slug": "delivery",
+          "children": []
+        },
+        {
+          "id": "moving-services",
+          "name": "Moving Services",
+          "slug": "moving-services",
+          "children": []
+        },
+        {
+          "id": "car-hire",
+          "name": "Car Hire",
+          "slug": "car-hire",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

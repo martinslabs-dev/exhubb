@@ -82,6 +82,38 @@ export default async function SellerDashboard() {
   const hasListings = activeListings > 0;
   const hasSale     = recentOrders.some((o) => o.status === "COMPLETED");
 
+  // KPI cards for dashboard (defined after revenue and other stats are computed)
+  const kpiCards = [
+    {
+      label: "Revenue (30 days)",
+      value: `₦${revenue.toLocaleString()}`,
+      sub: "Completed orders",
+      icon: Wallet,
+    },
+    {
+      label: "Orders in Queue",
+      value: String(queueCount),
+      sub: "Awaiting action",
+      icon: Package,
+    },
+    {
+      label: "Active Listings",
+      value: String(activeListings),
+      sub: "Published products",
+      icon: Store,
+    },
+    {
+      label: "Avg. Rating",
+      value: ratingAgg._count.rating > 0
+        ? ratingAgg._avg.rating!.toFixed(1)
+        : "—",
+      sub: ratingAgg._count.rating > 0
+        ? `${ratingAgg._count.rating} review${ratingAgg._count.rating !== 1 ? "s" : ""}`
+        : "No reviews yet",
+      icon: Star,
+    },
+  ];
+
   const checklist = [
     { label: "Create your account",          done: true,         href: null                               },
     { label: "Complete your seller profile", done: hasProfile,   href: "/dashboard/settings/profile"     },
@@ -114,36 +146,7 @@ export default async function SellerDashboard() {
 
       {/* ── KPI Cards ───────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          {
-            label: "Revenue (30 days)",
-            value: `$${revenue.toFixed(2)}`,
-            sub: "Completed orders",
-            icon: Wallet,
-          },
-          {
-            label: "Orders in Queue",
-            value: String(queueCount),
-            sub: "Awaiting action",
-            icon: Package,
-          },
-          {
-            label: "Active Listings",
-            value: String(activeListings),
-            sub: "Published products",
-            icon: Store,
-          },
-          {
-            label: "Avg. Rating",
-            value: ratingAgg._count.rating > 0
-              ? ratingAgg._avg.rating!.toFixed(1)
-              : "—",
-            sub: ratingAgg._count.rating > 0
-              ? `${ratingAgg._count.rating} review${ratingAgg._count.rating !== 1 ? "s" : ""}`
-              : "No reviews yet",
-            icon: Star,
-          },
-        ].map(({ label, value, sub, icon: Icon }) => (
+        {kpiCards.map(({ label, value, sub, icon: Icon }) => (
           <div key={label} className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-500">{label}</span>
@@ -214,7 +217,7 @@ export default async function SellerDashboard() {
                             {order.buyer.name ?? order.buyer.email}
                           </td>
                           <td className="px-3 py-3 font-medium text-gray-900 tabular-nums whitespace-nowrap">
-                            ${order.amount.toFixed(2)}
+                            ₦{order.amount.toLocaleString()}
                           </td>
                           <td className="px-3 py-3">
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", cfg.color)}>

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/db";
+import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import {
   Star, MapPin, Package, Truck, Shield,
   ChevronRight, Clock, CheckCircle2, Store,
@@ -138,6 +140,27 @@ export default async function ProductDetailPage({ params }: Props) {
   return (
     <>
       <Navbar />
+      {/* JSON-LD structured data for Product */}
+      <Script id={`jsonld-product-${product.id}`} type="application/ld+json" strategy="afterInteractive">
+        {`{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "@id": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/products/${product.id}`}",
+          "name": "${(product.title ?? "").replace(/"/g, '\\"')}",
+          "image": ${JSON.stringify(product.images.length ? product.images : [])},
+          "description": "${(product.description ?? "").replace(/"/g, '\\"')}",
+          "sku": "${product.id}",
+          "brand": { "@type": "Organization", "name": "${(product.seller.name ?? "").replace(/"/g, '\\"')}" },
+          "offers": {
+            "@type": "Offer",
+            "url": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/products/${product.id}`}",
+            "priceCurrency": "NGN",
+            "price": "${product.price}",
+            "availability": "${inStock ? "http://schema.org/InStock" : "http://schema.org/OutOfStock"}"
+          },
+          "aggregateRating": ${product.reviews.length ? `{"@type":"AggregateRating","ratingValue":"${avgRating!.toFixed(1)}","reviewCount":"${product.reviews.length}"}` : "null"}
+        }`}
+      </Script>
       <div className="min-h-screen bg-gray-50 pt-20">
         {/* breadcrumb */}
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -545,4 +568,25 @@ export default async function ProductDetailPage({ params }: Props) {
       <Footer />
     </>
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const product = await prisma.product.findUnique({ where: { id }, select: { title: true, description: true, images: true, category: true } });
+  if (!product) return { title: "Product Not Found" };
+  const site = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com";
+  const url = `${site}/products/${id}`;
+  return {
+    title: `${product.title} — Exhubb`,
+    description: product.description ?? undefined,
+    openGraph: {
+      title: `${product.title} — Exhubb`,
+      description: product.description ?? undefined,
+      images: product.images && product.images.length ? product.images : undefined,
+      type: "product",
+    },
+    alternates: {
+      canonical: url,
+    },
+  };
 }

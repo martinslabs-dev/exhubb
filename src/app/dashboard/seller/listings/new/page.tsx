@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -27,12 +27,16 @@ import {
   Download,
   Zap,
 } from "lucide-react";
-import { createListingAction } from "@/lib/actions/listings";
+import { createListingAction, updateListingAction } from "@/lib/actions/listings";
 
-const PHYSICAL_CATEGORIES = [
-  "Electronics", "Fashion", "Motors", "Home & Garden", "Collectibles",
-  "Sports", "Toys & Games", "Health & Beauty", "Books", "Other",
-];
+import TAXONOMY from "@/lib/taxonomy.json";
+
+// derive category lists from taxonomy.json
+const physicalMenu = TAXONOMY.menu.find((m: any) => m.title === "Physical Products") || { columns: [] };
+const digitalMenu = TAXONOMY.menu.find((m: any) => m.title === "Digital Products") || { columns: [] };
+
+const PHYSICAL_ITEMS = physicalMenu.columns.flatMap((col: any) => col.items.map((it: any) => ({ title: it.title, slug: it.slug, children: it.children || [] })));
+const DIGITAL_ITEMS  = digitalMenu.columns.flatMap((col: any) => col.items.map((it: any) => ({ title: it.title, slug: it.slug, children: it.children || [] })));
 
 const DIGITAL_SUB_TYPES = [
   { value: "ebook",    label: "eBook / Document",   icon: BookOpen   },
@@ -51,6 +55,7 @@ const SHIPPING_ZONES = [
 
 export default function NewListingPage() {
   const router  = useRouter();
+  const search  = useSearchParams();
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -60,14 +65,28 @@ export default function NewListingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedZones, setSelectedZones] = useState<string[]>(["NIGERIA"]);
   const [unlimitedStock, setUnlimitedStock] = useState(false);
-  // Variants state
-  const [variants, setVariants] = useState<{ name: string; value: string; price?: number; stock: number; sku?: string }[]>([]);
+  const [shipsFromCity, setShipsFromCity] = useState<string | undefined>(undefined);
+  const [weightVal, setWeightVal] = useState<number | undefined>(undefined);
+  const [nigeriaFeeVal, setNigeriaFeeVal] = useState<number | undefined>(undefined);
+  const [africaFeeVal, setAfricaFeeVal] = useState<number | undefined>(undefined);
+  const [internationalFeeVal, setInternationalFeeVal] = useState<number | undefined>(undefined);
+  const [variants, setVariants] = useState<{ name: string; value: string; price?: number | null; stock: number; sku?: string | null }[]>([]);
+  // Basic form fields for edit prefill
+  const [title, setTitle] = useState<string | undefined>(undefined);
+  const [description, setDescription] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState<string | undefined>(undefined);
+  const [subcategory, setSubcategory] = useState<string | undefined>(undefined);
+  const [price, setPrice] = useState<number | undefined>(undefined);
+  const [compareAtPrice, setCompareAtPrice] = useState<number | undefined>(undefined);
+  const [stock, setStock] = useState<number | undefined>(undefined);
+  // Variants state (see above)
   const [variantGroupName, setVariantGroupName] = useState("");
   // Digital product state
   const [productType, setProductType] = useState<"PHYSICAL" | "DIGITAL">("PHYSICAL");
   const [digitalFiles, setDigitalFiles] = useState<{ url: string; name: string }[]>([]);
   const [uploadingDigital, setUploadingDigital] = useState(false);
   const [digitalSubType, setDigitalSubType] = useState("ebook");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const digitalFileInputRef = useRef<HTMLInputElement>(null);
@@ -96,6 +115,81 @@ export default function NewListingPage() {
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
+
+  // If ?edit=<id> is present, fetch product and prefill form state
+  useEffect(() => {
+    const editId = search?.get("edit");
+    if (!editId) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/listings/${editId}`);
+        if (!res.ok) return;
+        const { product } = await res.json();
+        if (!mounted || !product) return;
+        setEditingId(product.id);
+        setImages(product.images || []);
+        setTags(product.tags || []);
+        setProductType(product.productType || "PHYSICAL");
+        setUnlimitedStock(product.unlimitedStock ?? false);
+        setDigitalFiles((product.digitalFiles || []).map((u: string, i: number) => ({ url: u, name: product.digitalFileNames?.[i] ?? `file-${i}` })));
+        // Shipping and fees
+        setSelectedZones(product.shippingZones ?? []);
+        setShipsFromCity(product.shipsFromCity ?? undefined);
+        setWeightVal(product.weight ?? undefined);
+        setNigeriaFeeVal(product.nigeriaFee ?? undefined);
+        setAfricaFeeVal(product.africaFee ?? undefined);
+        setInternationalFeeVal(product.internationalFee ?? undefined);
+        // Variants (if included)
+        setVariants((product.variants || []).map((v: any) => ({ name: v.name ?? "", value: v.value ?? "", price: v.price ?? null, stock: v.stock ?? 0, sku: v.sku ?? null })));
+        // Prefill basic fields so the visible form shows the product values
+        setTitle(product.title ?? undefined);
+        setDescription(product.description ?? undefined);
+        // Try to preserve parent/category and subcategory if present in product
+        if (product.subcategory) {
+          setCategory(product.category ?? undefined);
+          setSubcategory(product.subcategory ?? undefined);
+        } else if (product.category) {
+          // attempt to find if the stored category matches a known child and split
+          let found = false;
+          for (const it of PHYSICAL_ITEMS) {
+            if ((it.children || []).some((c: any) => c.title === product.category)) {
+              setCategory(it.title);
+              setSubcategory(product.category);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            for (const it of DIGITAL_ITEMS) {
+              if ((it.children || []).some((c: any) => c.title === product.category)) {
+                setCategory(it.title);
+                setSubcategory(product.category);
+                found = true;
+                break;
+              }
+            }
+          }
+          if (!found) {
+            setCategory(product.category);
+            setSubcategory(undefined);
+          }
+        } else {
+          setCategory(undefined);
+          setSubcategory(undefined);
+        }
+        setPrice(product.price ?? undefined);
+        setCompareAtPrice(product.compareAtPrice ?? undefined);
+        setStock(product.stock ?? undefined);
+        // set basic fields by setting hidden inputs when submitting (title/price/etc use form values)
+        // For UX, we can set errors to empty and focus later.
+      } catch (err) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleDigitalFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -166,7 +260,12 @@ export default function NewListingPage() {
     });
     if (variants.length > 0) form.append("variants", JSON.stringify(variants));
 
-    const result = await createListingAction(form);
+    let result: any;
+    if (editingId) {
+      result = await updateListingAction(editingId, form);
+    } else {
+      result = await createListingAction(form);
+    }
     if (result?.error) {
       setErrors({ submit: result.error });
       setSaving(false);
@@ -370,6 +469,8 @@ export default function NewListingPage() {
             </label>
             <input
               name="title"
+              defaultValue={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder={productType === "DIGITAL" ? "e.g. Complete React Course for Beginners" : "e.g. Premium Wireless Noise-Cancelling Headphones"}
               className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 ${errors.title ? "border-red-300 focus:border-red-400" : "border-gray-200 focus:border-primary-400"}`}
             />
@@ -383,6 +484,8 @@ export default function NewListingPage() {
             </label>
             <textarea
               name="description"
+              defaultValue={description}
+              onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder={productType === "DIGITAL"
                 ? "Describe what's included, who it's for, and what buyers will learn or gain…"
@@ -397,17 +500,54 @@ export default function NewListingPage() {
               <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Category *</span>
             </label>
             {productType === "DIGITAL" ? (
-              <input type="hidden" name="category" value="Digital Products" />
+              <>
+                <select
+                  name="category"
+                  defaultValue={category ?? ""}
+                  onChange={(e) => { setCategory(e.target.value); setSubcategory(undefined); }}
+                  className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 bg-white ${errors.category ? "border-red-300" : "border-gray-200 focus:border-primary-400"}`}
+                >
+                  <option value="" disabled>Select a digital category</option>
+                  {DIGITAL_ITEMS.map((c: any) => <option key={c.slug} value={c.title}>{c.title}</option>)}
+                </select>
+                {(() => {
+                  const sel = DIGITAL_ITEMS.find((d: any) => d.title === category);
+                  if (sel && sel.children && sel.children.length) {
+                    return (
+                      <select name="subcategory" defaultValue={subcategory ?? ""} onChange={(e) => setSubcategory(e.target.value)} className="w-full mt-2 h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none">
+                        <option value="" disabled>Select a subcategory</option>
+                        {sel.children.map((ch: any) => <option key={ch.slug} value={ch.title}>{ch.title}</option>)}
+                      </select>
+                    );
+                  }
+                  return null;
+                })()}
+              </>
             ) : null}
             {productType === "PHYSICAL" ? (
-              <select
-                name="category"
-                defaultValue=""
-                className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 bg-white ${errors.category ? "border-red-300" : "border-gray-200 focus:border-primary-400"}`}
-              >
-                <option value="" disabled>Select a category</option>
-                {PHYSICAL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+                <>
+                  <select
+                    name="category"
+                    defaultValue={category ?? ""}
+                    onChange={(e) => { setCategory(e.target.value); setSubcategory(undefined); }}
+                    className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 bg-white ${errors.category ? "border-red-300" : "border-gray-200 focus:border-primary-400"}`}
+                  >
+                    <option value="" disabled>Select a category</option>
+                    {PHYSICAL_ITEMS.map((c: any) => <option key={c.slug} value={c.title}>{c.title}</option>)}
+                  </select>
+                  {(() => {
+                    const sel = PHYSICAL_ITEMS.find((d: any) => d.title === category);
+                    if (sel && sel.children && sel.children.length) {
+                      return (
+                        <select name="subcategory" defaultValue={subcategory ?? ""} onChange={(e) => setSubcategory(e.target.value)} className="w-full mt-2 h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none">
+                          <option value="" disabled>Select a subcategory</option>
+                          {sel.children.map((ch: any) => <option key={ch.slug} value={ch.title}>{ch.title}</option>)}
+                        </select>
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
             ) : (
               <div className="flex items-center gap-2 h-11 px-3.5 rounded-xl border border-indigo-200 bg-indigo-50 text-sm text-indigo-700 font-semibold">
                 <Zap className="w-4 h-4" /> Digital Products
@@ -432,6 +572,8 @@ export default function NewListingPage() {
                 <input
                   name="price"
                   type="number"
+                  defaultValue={price ?? undefined}
+                  onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : undefined)}
                   min="0"
                   step="1"
                   placeholder="0"
@@ -439,16 +581,13 @@ export default function NewListingPage() {
                 />
               </div>
               {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                <span className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5" /> Compare-at Price (₦)</span>
-              </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₦</span>
                 <input
                   name="compareAtPrice"
                   type="number"
+                  defaultValue={compareAtPrice ?? undefined}
+                  onChange={(e) => setCompareAtPrice(e.target.value ? Number(e.target.value) : undefined)}
                   min="0"
                   step="1"
                   placeholder="Original price (shows as crossed out)"
@@ -471,7 +610,8 @@ export default function NewListingPage() {
                   type="number"
                   min="0"
                   placeholder="1"
-                  defaultValue={unlimitedStock ? "" : undefined}
+                  defaultValue={unlimitedStock ? "" : (stock ?? undefined)}
+                  onChange={(e) => setStock(e.target.value ? Number(e.target.value) : undefined)}
                   className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 ${errors.stock ? "border-red-300" : "border-gray-200 focus:border-primary-400"}`}
                 />
                 {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock}</p>}
@@ -540,6 +680,7 @@ export default function NewListingPage() {
                 <input key={z} type="hidden" name="shippingZones" value={z} />
               ))}
             </div>
+            {/* shipsFromCity input moved into the grid below for proper layout */}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -548,6 +689,8 @@ export default function NewListingPage() {
                 </label>
                 <input
                   name="shipsFromCity"
+                  defaultValue={shipsFromCity ?? undefined}
+                  onChange={(e) => setShipsFromCity(e.target.value)}
                   placeholder="e.g. Lagos"
                   className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
                 />
@@ -559,6 +702,8 @@ export default function NewListingPage() {
                 <input
                   name="weight"
                   type="number"
+                  defaultValue={weightVal ?? undefined}
+                  onChange={(e) => setWeightVal(e.target.value ? Number(e.target.value) : undefined)}
                   min="0"
                   step="0.1"
                   placeholder="0.5"
@@ -573,21 +718,21 @@ export default function NewListingPage() {
                 {selectedZones.includes("NIGERIA") && (
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">🇳🇬 Nigeria Fee</label>
-                    <input name="nigeriaFee" type="number" min="0" step="1" placeholder="2,000"
+                    <input name="nigeriaFee" defaultValue={nigeriaFeeVal ?? undefined} onChange={(e) => setNigeriaFeeVal(e.target.value ? Number(e.target.value) : undefined)} type="number" min="0" step="1" placeholder="2,000"
                       className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100" />
                   </div>
                 )}
                 {selectedZones.includes("AFRICA") && (
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">🌍 Africa Fee</label>
-                    <input name="africaFee" type="number" min="0" step="1" placeholder="8,000"
+                    <input name="africaFee" defaultValue={africaFeeVal ?? undefined} onChange={(e) => setAfricaFeeVal(e.target.value ? Number(e.target.value) : undefined)} type="number" min="0" step="1" placeholder="8,000"
                       className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100" />
                   </div>
                 )}
                 {selectedZones.includes("INTERNATIONAL") && (
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">🌐 International Fee</label>
-                    <input name="internationalFee" type="number" min="0" step="1" placeholder="20,000"
+                    <input name="internationalFee" defaultValue={internationalFeeVal ?? undefined} onChange={(e) => setInternationalFeeVal(e.target.value ? Number(e.target.value) : undefined)} type="number" min="0" step="1" placeholder="20,000"
                       className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100" />
                   </div>
                 )}

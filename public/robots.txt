@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.example.com/sitemap.xml
+
+# If you have staging or private routes, disallow them explicitly
+# Disallow: /admin
+
+# Crawl-delay can be set if necessary for heavy sites
+# Crawl-delay: 10

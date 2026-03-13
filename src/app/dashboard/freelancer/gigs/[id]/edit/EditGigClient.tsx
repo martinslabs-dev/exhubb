@@ -21,12 +21,11 @@ import {
   Briefcase,
 } from "lucide-react";
 import { updateGigAction } from "@/lib/actions/gig";
+import TAXONOMY from "@/lib/taxonomy.json";
+import CATEGORIES_MENU from "@/../taxonomy-migration/categories_menu.json";
 
-const CATEGORIES = [
-  "Design & Creative", "Tech & Dev", "Marketing", "Writing & Translation",
-  "Music & Audio", "Video & Animation", "Data & Analytics", "Business",
-  "Photography", "Legal", "Finance", "Other",
-];
+const servicesMenu = TAXONOMY.menu.find((m: any) => m.title === "Services" || m.slug === "services") || CATEGORIES_MENU.menu.find((m: any) => m.title === "Services" || m.slug === "services") || { columns: [] };
+const SERVICES_ITEMS = servicesMenu.columns.flatMap((c: any) => (c.items || []).map((it: any) => ({ title: it.title, slug: it.slug, children: it.children || [] })));
 
 const DELIVERY_DAYS = [1, 2, 3, 5, 7, 10, 14, 21, 30];
 
@@ -35,6 +34,7 @@ interface Gig {
   title: string;
   description: string | null;
   category: string;
+  subcategory?: string | null;
   deliveryDays: number;
   basicPrice: number;
   standardPrice: number | null;
@@ -50,12 +50,20 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [titleWords, setTitleWords] = useState<number>((gig.title || "").trim().split(/\s+/).filter(Boolean).length);
+  const [descWords, setDescWords] = useState<number>((gig.description || "").trim().split(/\s+/).filter(Boolean).length);
 
   const [tags,     setTags]     = useState<string[]>(gig.tags);
   const [tagInput, setTagInput] = useState("");
 
   const [showStandard, setShowStandard] = useState(!!gig.standardPrice);
   const [showPremium,  setShowPremium]  = useState(!!gig.premiumPrice);
+  const [category, setCategory] = useState<string | undefined>(gig.category ?? undefined);
+  const [subcategory, setSubcategory] = useState<string | undefined>(gig.subcategory ?? undefined);
+  const [coverImage, setCoverImage] = useState<string | null>(gig.coverImage ?? null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const [coverMeta, setCoverMeta] = useState<{ name: string; size: number; width?: number; height?: number } | null>(null);
 
   const [samples,          setSamples]          = useState<string[]>(gig.samples);
   const [samplesUploading, setSamplesUploading] = useState(false);
@@ -82,15 +90,85 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
       const fd = new FormData();
       fd.append("file", file);
       try {
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
         const data = await res.json();
+        if (!res.ok) {
+          console.error("sample upload failed", data);
+          continue;
+        }
         if (data.url) urls.push(data.url as string);
-      } catch {
+      } catch (err) {
+        console.error("sample upload error", err);
         // skip failed upload
       }
     }
     setSamples((prev) => [...prev, ...urls]);
     setSamplesUploading(false);
+  }
+
+  async function handleCoverFile(file: File | null) {
+    if (!file) return;
+    // client-side validation
+    const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setErrors((p) => ({ ...p, cover: "Unsupported file type. Use JPG, PNG, WebP, GIF or AVIF." }));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setErrors((p) => ({ ...p, cover: `File too large. Max ${MAX_IMAGE_BYTES / 1024 / 1024} MB.` }));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error("Failed to read image"));
+        img.src = objectUrl;
+      });
+      setCoverMeta({ name: file.name, size: file.size, width: dims.w, height: dims.h });
+    } catch (e) {
+      setCoverMeta({ name: file.name, size: file.size });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    setErrors((p) => { const c = { ...p }; delete c.cover; return c; });
+    setCoverUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("cover upload failed", data);
+        setErrors((prev) => ({ ...prev, cover: data?.error ?? "Upload failed" }));
+      } else if (data.url) {
+        setCoverImage(data.url as string);
+      }
+    } catch (err) {
+      console.error("cover upload error", err);
+      setErrors((prev) => ({ ...prev, cover: "Upload failed" }));
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDropCover(e: React.DragEvent) {
+    e.preventDefault();
+    const f = e.dataTransfer?.files?.[0] ?? null;
+    handleCoverFile(f);
+  }
+
+  function handleDropSamples(e: React.DragEvent) {
+    e.preventDefault();
+    handleSampleFiles(e.dataTransfer?.files ?? null);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -100,6 +178,20 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
     const form = new FormData(e.currentTarget);
     form.set("tags",    tags.join(","));
     form.set("samples", samples.join(","));
+
+    const countWords = (s?: string | null) => (s ? s.trim().split(/\s+/).filter(Boolean).length : 0);
+    const titleVal = form.get("title") as string;
+    const descVal = form.get("description") as string;
+    if (countWords(titleVal) > 80) {
+      setErrors({ submit: "Title exceeds 80 words" });
+      setSaving(false);
+      return;
+    }
+    if (countWords(descVal) > 1200) {
+      setErrors({ submit: "Description exceeds 1200 words" });
+      setSaving(false);
+      return;
+    }
 
     const result = await updateGigAction(gig.id, form);
     if (result?.error) {
@@ -145,9 +237,11 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
             <input
               name="title"
               defaultValue={gig.title}
+              onChange={(e) => setTitleWords(e.currentTarget.value.trim().split(/\s+/).filter(Boolean).length)}
               className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-100 ${errors.title ? "border-red-300" : "border-gray-200 focus:border-primary-400"}`}
             />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+            <p className={`text-xs mt-1 ${titleWords > 80 ? 'text-red-500' : 'text-gray-400'}`}>{titleWords} / 80 words</p>
           </div>
 
           <div>
@@ -158,8 +252,10 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
               name="description"
               rows={5}
               defaultValue={gig.description ?? ""}
+              onChange={(e) => setDescWords(e.currentTarget.value.trim().split(/\s+/).filter(Boolean).length)}
               className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all resize-none"
             />
+            <p className={`text-xs mt-1 ${descWords > 1200 ? 'text-red-500' : 'text-gray-400'}`}>{descWords} / 1200 words</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -167,13 +263,88 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Category *</span>
               </label>
-              <select
-                name="category"
-                defaultValue={gig.category}
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none transition-all bg-white focus:ring-2 focus:ring-primary-100 focus:border-primary-400"
-              >
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <div>
+                <select
+                  name="category"
+                  value={category ?? ""}
+                  onChange={(e) => { setCategory(e.target.value || undefined); setSubcategory(undefined); }}
+                  className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none transition-all bg-white focus:ring-2 focus:ring-primary-100 focus:border-primary-400"
+                >
+                  <option value="" disabled>Select category</option>
+                  {SERVICES_ITEMS.map((c) => <option key={c.slug} value={c.title}>{c.title}</option>)}
+                </select>
+                {(() => {
+                  const sel = SERVICES_ITEMS.find((d: any) => d.title === category);
+                  if (sel && sel.children && sel.children.length) {
+                    return (
+                      <select name="subcategory" value={subcategory ?? ""} onChange={(e) => setSubcategory(e.target.value || undefined)} className="w-full mt-2 h-11 px-3.5 rounded-xl border border-gray-200 text-sm outline-none">
+                        <option value="">Select a subcategory (optional)</option>
+                        {sel.children.map((ch: any) => <option key={ch.slug} value={ch.title}>{ch.title}</option>)}
+                      </select>
+                    );
+                  }
+                  return null;
+                })()}
+                <div className="mt-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Cover image (thumbnail)</label>
+                  <div className="mt-2">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); coverInputRef.current?.click(); } }}
+                      onClick={() => coverInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDropCover}
+                      className="group relative border-2 border-dashed rounded-xl p-3 flex items-center gap-4 hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 cursor-pointer"
+                    >
+                      <div className="w-28 h-16 bg-gray-50 rounded-md overflow-hidden flex items-center justify-center border">
+                        {coverImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center text-gray-400">
+                            <ImageIcon className="w-6 h-6" />
+                            <span className="text-xs mt-1">Drop image or click</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3">
+                          <button type="button" disabled={coverUploading} onClick={() => coverInputRef.current?.click()} className="text-sm px-3 py-1 bg-white border rounded-md">Choose file</button>
+                          <div className="text-sm text-gray-600 truncate">This image appears on listing cards</div>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Recommended: 640×360 • JPG/PNG/WebP • Max 5 MB</p>
+                        {coverMeta && (
+                          <div className="mt-2 text-xs text-gray-600">
+                            <div className="truncate">{coverMeta.name} • {Math.round(coverMeta.size / 1024)} KB</div>
+                            {coverMeta.width && coverMeta.height && (
+                              <div>{coverMeta.width}×{coverMeta.height} ({Math.round((coverMeta.width/coverMeta.height)*100)/100}:1)</div>
+                            )}
+                          </div>
+                        )}
+                        {errors.cover && <p className="text-xs text-red-500 mt-1" aria-live="polite">{errors.cover}</p>}
+                      </div>
+
+                      {coverUploading && <div className="absolute right-3 top-3"><Loader2 className="w-5 h-5 animate-spin text-primary-600" /></div>}
+
+                      {coverImage && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setCoverImage(null); setErrors((p) => { const c = { ...p }; delete c.cover; return c; }); }}
+                          className="absolute top-2 right-2 bg-white rounded-full p-1 shadow"
+                          aria-label="Remove cover image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+
+                      <input ref={coverInputRef} type="file" accept="image/*" className="sr-only" onChange={(e) => handleCoverFile(e.target.files?.[0] ?? null)} />
+                    </div>
+                    {coverImage && <input type="hidden" name="coverImage" value={coverImage} />}
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -297,7 +468,7 @@ export default function EditGigClient({ gig }: { gig: Gig }) {
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Work Samples</h2>
           <p className="text-xs text-gray-400 mb-4">Upload up to 6 images or short videos that showcase your work.</p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+          <div onDragOver={handleDragOver} onDrop={handleDropSamples} className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
             {samples.map((url, i) => {
               const vid = /\.(mp4|webm|mov)$/i.test(url);
               return (

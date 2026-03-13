@@ -1,0 +1,12 @@
+{
+  "name": "taxonomy-migration",
+  "version": "1.0.0",
+  "description": "Taxonomy definitions, migration SQL and a small mapping script to auto-classify products.",
+  "main": "index.js",
+  "scripts": {
+    "map": "node index.js",
+    "map-sample": "node index.js sample_products.json mapped_products.json"
+  },
+  "author": "exhubb-team",
+  "license": "MIT"
+}

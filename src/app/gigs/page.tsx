@@ -40,10 +40,12 @@ export default async function GigsPage({ searchParams }: Props) {
   const q        = params.q        ?? "";
   const category = params.category ?? "";
   const sort     = params.sort     ?? "newest";
+  const sellerId = params.sellerId ?? undefined;
 
   const gigs = await prisma.gig.findMany({
     where: {
       isActive: true,
+      ...(sellerId && { freelancerId: sellerId }),
       ...(category && category !== "All" && { category }),
       ...(q && {
         OR: [
@@ -158,7 +160,7 @@ export default async function GigsPage({ searchParams }: Props) {
               )}
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {gigs.map((gig) => (
                 <Link
                   key={gig.id}

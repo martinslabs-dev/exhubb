@@ -46,11 +46,13 @@ export default async function FreelancerEarningsPage() {
   const netEarned       = totalEarned * (1 - platformFeeRate);
   const availablePayout = 0;
 
+  const formatNGN = (v: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(v);
+
   const STATS = [
-    { label: "Gross Earned",      value: `$${totalEarned.toFixed(2)}`,   sub: "Before fees",         icon: TrendingUp, color: "text-green-600",  bg: "bg-green-50"  },
-    { label: "Net Earnings",      value: `$${netEarned.toFixed(2)}`,     sub: "After 20% fee",       icon: DollarSign, color: "text-primary-600", bg: "bg-primary-50"},
-    { label: "Pending Clearance", value: `$${pendingAmount.toFixed(2)}`, sub: `${pendingAgg._count} active`, icon: Clock, color: "text-amber-500", bg: "bg-amber-50"},
-    { label: "Available Payout",  value: `$0.00`,                        sub: "Ready to withdraw",   icon: Wallet,     color: "text-indigo-600", bg: "bg-indigo-50" },
+    { label: "Gross Earned",      value: formatNGN(totalEarned),   sub: "Before fees",         icon: TrendingUp, color: "text-green-600",  bg: "bg-green-50"  },
+    { label: "Net Earnings",      value: formatNGN(netEarned),     sub: "After 20% fee",       icon: DollarSign, color: "text-primary-600", bg: "bg-primary-50"},
+    { label: "Pending Clearance", value: formatNGN(pendingAmount), sub: `${pendingAgg._count} active`, icon: Clock, color: "text-amber-500", bg: "bg-amber-50"},
+    { label: "Available Payout",  value: formatNGN(availablePayout),                        sub: "Ready to withdraw",   icon: Wallet,     color: "text-indigo-600", bg: "bg-indigo-50" },
   ];
 
   const MONTHS = ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"];
@@ -89,7 +91,7 @@ export default async function FreelancerEarningsPage() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-semibold text-indigo-200">Available for Withdrawal</p>
-            <p className="text-4xl font-black mt-1">${availablePayout.toFixed(2)}</p>
+            <p className="text-4xl font-black mt-1">{formatNGN(availablePayout)}</p>
             <p className="text-indigo-200 text-sm mt-2">
               Funds clear 14 days after order completion.
             </p>
@@ -152,11 +154,11 @@ export default async function FreelancerEarningsPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <h2 className="text-base font-black text-gray-900 mb-4">Fee Breakdown</h2>
           <div className="space-y-3">
-            {[
-              { label: "Gross Revenue",    value: `$${totalEarned.toFixed(2)}`,                      color: "text-gray-900" },
-              { label: "Platform Fee (20%)", value: `-$${(totalEarned * platformFeeRate).toFixed(2)}`, color: "text-red-500"  },
-              { label: "Net Earnings",     value: `$${netEarned.toFixed(2)}`,                        color: "text-green-600 font-black" },
-            ].map(({ label, value, color }) => (
+                  {[
+                    { label: "Gross Revenue",    value: formatNGN(totalEarned),                      color: "text-gray-900" },
+                    { label: "Platform Fee (20%)", value: `-${formatNGN(totalEarned * platformFeeRate)}`, color: "text-red-500"  },
+                    { label: "Net Earnings",     value: formatNGN(netEarned),                        color: "text-green-600 font-black" },
+                  ].map(({ label, value, color }) => (
               <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <span className="text-sm text-gray-600">{label}</span>
                 <span className={cn("text-sm font-bold", color)}>{value}</span>
@@ -202,8 +204,8 @@ export default async function FreelancerEarningsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-green-600">+${net.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400">Gross ${order.amount.toFixed(2)}</p>
+                    <p className="text-sm font-black text-green-600">+{formatNGN(net)}</p>
+                    <p className="text-xs text-gray-400">Gross {formatNGN(order.amount)}</p>
                   </div>
                 </div>
               );

@@ -86,8 +86,22 @@ export async function POST(req: NextRequest) {
   const filename = `${randomBytes(16).toString("hex")}${safeExt}`;
 
   const uploadDir = join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(join(uploadDir, filename), buffer);
+  try {
+    await mkdir(uploadDir, { recursive: true });
+    const target = join(uploadDir, filename);
+    await writeFile(target, buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+    // Verify file was written and has content
+    if (!buffer || buffer.length === 0) {
+      // remove the file if it exists
+      try { await writeFile(target, Buffer.from(''), { flag: 'w' }); } catch { }
+      return NextResponse.json({ error: "Uploaded file appears empty" }, { status: 500 });
+    }
+
+    // Return a relative public URL. Consumers should check for 200 when fetching.
+    return NextResponse.json({ url: `/uploads/${filename}` });
+  } catch (e: any) {
+    console.error("upload error:", e?.message ?? e);
+    return NextResponse.json({ error: "Failed to save upload" }, { status: 500 });
+  }
 }

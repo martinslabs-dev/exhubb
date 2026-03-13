@@ -2,10 +2,23 @@
 
 import Link from "next/link";
 
+"use client";
+
+import { useRouter } from "next/navigation";
+import React from "react";
+
 export default function TagLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
+  const router = useRouter();
   return (
-    <Link href={href} onClick={(e) => e.stopPropagation()} className={className}>
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(href);
+      }}
+      className={className}
+    >
       {children}
-    </Link>
+    </button>
   );
 }

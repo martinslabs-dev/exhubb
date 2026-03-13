@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X, SlidersHorizontal, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import taxonomy from "@/lib/taxonomy.json";
 
 const CATEGORIES = [
-  "All", "Electronics", "Fashion", "Motors", "Home & Garden",
-  "Collectibles", "Sports", "Beauty", "Books", "Digital Products", "Other",
+  "All",
+  ...Array.from(new Set(
+    taxonomy.menu.flatMap((m: any) => m.columns.map((c: any) => c.heading))
+  )),
 ];
 
 const ZONES = [
@@ -41,6 +44,14 @@ export default function FilterDrawer() {
       if (v !== undefined && v !== "") p.set(k, v);
       else p.delete(k);
     });
+    if (Object.prototype.hasOwnProperty.call(overrides, "category") && !Object.prototype.hasOwnProperty.call(overrides, "subcategory")) {
+      const newCat = overrides["category"];
+      if (newCat !== undefined && newCat !== null) p.delete("subcategory");
+    }
+    if (Object.prototype.hasOwnProperty.call(overrides, "type") && !Object.prototype.hasOwnProperty.call(overrides, "subcategory")) {
+      const newType = overrides["type"];
+      if (newType !== undefined && newType !== null) p.delete("subcategory");
+    }
     return `/products?${p.toString()}`;
   }
 
@@ -50,6 +61,7 @@ export default function FilterDrawer() {
   }
 
   const category = sp.get("category") ?? "All";
+  const subcategory = sp.get("subcategory") ?? "";
   const zone     = sp.get("zone") ?? "";
   const rating   = sp.get("rating") ?? "";
   const type     = sp.get("type") ?? "";
@@ -90,19 +102,19 @@ export default function FilterDrawer() {
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Product Type</p>
             <div className="flex gap-2">
-              {[["", "All"], ["PHYSICAL", "Physical"], ["DIGITAL", "Digital"]].map(([v, label]) => (
-                <button
-                  key={v}
-                  onClick={() => navigate(buildUrl({ type: v || undefined }))}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
-                    type === v ? "bg-primary-600 text-white border-primary-600" : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
+              <button
+                onClick={() => navigate(buildUrl({ type: undefined }))}
+                className={cn(
+                  "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
+                  !type ? "bg-primary-600 text-white border-primary-600" : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                )}
+              >
+                All
+              </button>
             </div>
+            {!type && (
+              <p className="text-xs text-gray-500 mt-2">Showing both physical and digital products</p>
+            )}
           </div>
 
           {/* Category */}
@@ -125,6 +137,38 @@ export default function FilterDrawer() {
               ))}
             </div>
           </div>
+
+          {/* Subcategory (mobile) */}
+          {category && category !== "All" && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Subcategory</p>
+              <div className="space-y-1">
+                {(() => {
+                  const cols = taxonomy.menu.flatMap((m: any) => m.columns || []);
+                  const match = cols.find((c: any) => c.heading === category);
+                  if (!match) return <p className="text-sm text-gray-400">No subcategories</p>;
+                  const items: any[] = match.items || [];
+                  const links: { label: string; value: string }[] = [];
+                  items.forEach((it: any) => {
+                    links.push({ label: it.title, value: it.title });
+                    if (it.children) it.children.forEach((ch: any) => links.push({ label: `↳ ${ch.title}`, value: ch.title }));
+                  });
+                  return links.map((l) => (
+                    <button
+                      key={l.value}
+                      onClick={() => navigate(buildUrl({ subcategory: l.value || undefined }))}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                        subcategory === l.value ? "bg-primary-600 text-white font-semibold" : "text-gray-700 hover:bg-gray-100"
+                      )}
+                    >
+                      {l.label}
+                    </button>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* Ships To */}
           <div>

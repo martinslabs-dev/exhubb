@@ -1,0 +1,14 @@
+%% Data plane autoscale and registration
+flowchart TB
+  Metrics[Node Metrics / Load] -->|High load| Autoscaler[Autoscaler / Orchestrator]
+  Autoscaler --> Provisioner[Provisioner (Terraform/Cloud API)]
+  Provisioner --> Cloud[Cloud Provider API]
+  Cloud --> NewInstance[New VM Instance]
+  NewInstance --> Bootstrap[cloud-init / user-data]
+  Bootstrap --> Node[VPN Node]
+  Node -->|Register| Control[Control Plane API]
+  Control -->|Update registry| DB[(Postgres)]
+  Node -->|Send metrics| MetricsDB[(Prometheus / TSDB)]
+  MetricsDB --> Autoscaler
+  Autoscaler -->|Scale down| Provisioner
+  NoteRight[Cost & egress monitor triggers scale policy] --> Autoscaler

@@ -142,7 +142,7 @@ export default async function SellerOrderDetailPage({
                 {category && <p className="text-xs text-gray-400 mt-0.5">{category}</p>}
                 <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
                   <span>Qty: <strong className="text-gray-800">{order.quantity}</strong></span>
-                  <span>Unit price: <strong className="text-gray-800">${(order.amount / order.quantity).toFixed(2)}</strong></span>
+                  <span>Unit price: <strong className="text-gray-800">₦{(order.amount / order.quantity).toLocaleString()}</strong></span>
                 </div>
               </div>
             </div>

@@ -1,0 +1,272 @@
+[
+  {
+    "id": "phones-tablets",
+    "name": "Phones & Tablets",
+    "slug": "phones-tablets",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "mobile-phones",
+    "name": "Mobile Phones",
+    "slug": "mobile-phones",
+    "parent_id": "phones-tablets",
+    "depth": 1,
+    "attribute_set_id": "mobile-phones",
+    "meta": {}
+  },
+  {
+    "id": "smartphones",
+    "name": "Smartphones",
+    "slug": "smartphones",
+    "parent_id": "mobile-phones",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "basic-phones",
+    "name": "Basic Phones",
+    "slug": "basic-phones",
+    "parent_id": "mobile-phones",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "refurbished-phones",
+    "name": "Refurbished Phones",
+    "slug": "refurbished-phones",
+    "parent_id": "mobile-phones",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "rugged-phones",
+    "name": "Rugged Phones",
+    "slug": "rugged-phones",
+    "parent_id": "mobile-phones",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "mobile-accessories",
+    "name": "Mobile Accessories",
+    "slug": "mobile-accessories",
+    "parent_id": "phones-tablets",
+    "depth": 1,
+    "attribute_set_id": "mobile-accessories",
+    "meta": {}
+  },
+  {
+    "id": "chargers-cables",
+    "name": "Chargers & Cables",
+    "slug": "chargers-cables",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "batteries-powerbanks",
+    "name": "Batteries & Power Banks",
+    "slug": "batteries-powerbanks",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "cases-screen-protectors",
+    "name": "Cases & Screen Protectors",
+    "slug": "cases-screen-protectors",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "audio",
+    "name": "Audio (Earphones & Headsets)",
+    "slug": "audio",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "memory-cards",
+    "name": "Memory Cards",
+    "slug": "memory-cards",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "phone-camera-lenses",
+    "name": "Phone Camera Lenses",
+    "slug": "phone-camera-lenses",
+    "parent_id": "mobile-accessories",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "tablets",
+    "name": "Tablets",
+    "slug": "tablets",
+    "parent_id": "phones-tablets",
+    "depth": 1,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "ipads",
+    "name": "iPads",
+    "slug": "ipads",
+    "parent_id": "tablets",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "android-tablets",
+    "name": "Android Tablets",
+    "slug": "android-tablets",
+    "parent_id": "tablets",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "educational-tablets",
+    "name": "Educational Tablets",
+    "slug": "educational-tablets",
+    "parent_id": "tablets",
+    "depth": 2,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "electronics",
+    "name": "Electronics",
+    "slug": "electronics",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "computing",
+    "name": "Computing",
+    "slug": "computing",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "fashion",
+    "name": "Fashion",
+    "slug": "fashion",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "home-office",
+    "name": "Home & Office",
+    "slug": "home-office",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "supermarket",
+    "name": "Supermarket",
+    "slug": "supermarket",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "health-beauty",
+    "name": "Health & Beauty",
+    "slug": "health-beauty",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "baby-toys",
+    "name": "Baby & Toys",
+    "slug": "baby-toys",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "gaming",
+    "name": "Gaming",
+    "slug": "gaming",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "automotive",
+    "name": "Automotive",
+    "slug": "automotive",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "sports-outdoors",
+    "name": "Sports & Outdoors",
+    "slug": "sports-outdoors",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "books-stationery",
+    "name": "Books & Stationery",
+    "slug": "books-stationery",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "services-subscriptions",
+    "name": "Services & Subscriptions",
+    "slug": "services-subscriptions",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  },
+  {
+    "id": "other",
+    "name": "Other",
+    "slug": "other",
+    "parent_id": null,
+    "depth": 0,
+    "attribute_set_id": null,
+    "meta": {}
+  }
+]

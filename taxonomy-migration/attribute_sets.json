@@ -1,0 +1,25 @@
+{
+  "mobile-phones": {
+    "name": "Mobile Phones",
+    "attributes": [
+      { "key": "brand", "type": "string", "facet": true },
+      { "key": "model", "type": "string", "facet": false },
+      { "key": "storage_gb", "type": "number", "facet": true },
+      { "key": "ram_gb", "type": "number", "facet": true },
+      { "key": "condition", "type": "enum", "values": ["New","Refurbished","Used"], "facet": true },
+      { "key": "network", "type": "string", "facet": true },
+      { "key": "color", "type": "string", "facet": true },
+      { "key": "warranty_months", "type": "number", "facet": false }
+    ]
+  },
+  "mobile-accessories": {
+    "name": "Mobile Accessories",
+    "attributes": [
+      { "key": "accessory_type", "type": "string", "facet": true },
+      { "key": "compatible_brands", "type": "string", "facet": true },
+      { "key": "connector_type", "type": "string", "facet": true },
+      { "key": "wireless", "type": "boolean", "facet": true },
+      { "key": "features", "type": "string", "facet": false }
+    ]
+  }
+}

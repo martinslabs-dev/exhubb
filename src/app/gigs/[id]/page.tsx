@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import Navbar from "@/components/sections/Navbar";
 import Footer from "@/components/sections/Footer";
+import Script from "next/script";
 import GigSampleSlideshow from "@/app/gigs/GigSampleSlideshow";
 import {
   Clock,
@@ -25,8 +26,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const gig = await prisma.gig.findUnique({ where: { id }, select: { title: true } });
-  return { title: gig ? `${gig.title} — Exhubb` : "Gig Not Found" };
+  const gig = await prisma.gig.findUnique({ where: { id }, select: { title: true, description: true, coverImage: true } });
+  if (!gig) return { title: "Gig Not Found" };
+  return {
+    title: `${gig.title} — Exhubb`,
+    description: gig.description ?? undefined,
+    openGraph: {
+      title: `${gig.title} — Exhubb`,
+      description: gig.description ?? undefined,
+      images: gig.coverImage ? [gig.coverImage] : undefined,
+      type: "website",
+    },
+  };
 }
 
 export default async function GigDetailPage({ params }: Props) {
@@ -99,6 +110,27 @@ export default async function GigDetailPage({ params }: Props) {
   return (
     <>
       <Navbar />
+      {/* JSON-LD structured data for the gig/service */}
+      <Script id={`jsonld-gig-${gig.id}`} type="application/ld+json" strategy="afterInteractive">
+        {`{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "@id": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/gigs/${gig.id}`}",
+          "name": "${(gig.title ?? "").replace(/"/g, '\\"')}",
+          "description": "${(gig.description ?? "").replace(/"/g, '\\"')}",
+          "provider": {
+            "@type": "Person",
+            "name": "${(gig.freelancer.name ?? "").replace(/"/g, '\\"')}",
+            "url": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/freelancer/${gig.freelancer.id}`}`
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "${gig.basicPrice}",
+            "priceCurrency": "NGN",
+            "url": "${(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.example.com") + `/gigs/${gig.id}`}`
+          }
+        }`}
+      </Script>
       <main className="min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 

@@ -17,6 +17,7 @@ import {
   Tag,
   TrendingUp,
 } from "lucide-react";
+import ProductRowActions from "@/components/dashboard/ProductRowActions";
 
 export const metadata: Metadata = { title: "My Listings" };
 
@@ -186,7 +187,7 @@ export default async function SellerListingsPage({
 
               {/* Price */}
               <div className="text-right flex-shrink-0">
-                <p className="text-base font-black text-gray-900">${product.price.toFixed(2)}</p>
+                <p className="text-base font-black text-gray-900">₦{product.price.toLocaleString()}</p>
                 <p className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-0.5">
                   <TrendingUp className="w-3 h-3" />
                   0 sales
@@ -196,30 +197,14 @@ export default async function SellerListingsPage({
               {/* Actions */}
               <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link
-                  href={`/dashboard/seller/listings/${product.id}/edit`}
+                  href={`/dashboard/seller/listings/new?edit=${product.id}`}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
                   title="Edit"
                 >
                   <Edit2 className="w-3.5 h-3.5 text-gray-500" />
                 </Link>
-                <button
-                  className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
-                  title={product.isActive ? "Deactivate" : "Activate"}
-                >
-                  {product.isActive
-                    ? <EyeOff className="w-3.5 h-3.5 text-gray-500" />
-                    : <Eye    className="w-3.5 h-3.5 text-gray-500" />
-                  }
-                </button>
-                <button
-                  className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                </button>
-                <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
-                  <MoreVertical className="w-3.5 h-3.5 text-gray-500" />
-                </button>
+                {/* Client-side actions component handles toggle/delete/more */}
+                <ProductRowActions productId={product.id} isActive={product.isActive} />
               </div>
             </div>
           ))}

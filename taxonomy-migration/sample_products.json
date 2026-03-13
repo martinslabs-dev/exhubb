@@ -1,0 +1,8 @@
+[
+  { "id": "p1", "title": "Apple iPhone 15 Pro Max 256GB", "description": "Latest model smartphone", "tags": ["iphone", "apple"] },
+  { "id": "p2", "title": "USB-C Fast Charger 30W", "description": "Wall charger for phones", "tags": ["charger", "usb-c"] },
+  { "id": "p3", "title": "Screen Protector for Samsung Galaxy S24", "description": "Tempered glass", "tags": ["screen protector"] },
+  { "id": "p4", "title": "Refurbished Tecno Spark 8", "description": "Working but affordable", "tags": ["refurbished"] },
+  { "id": "p5", "title": "Power Bank 10000mAh", "description": "Portable battery", "tags": ["power bank"] },
+  { "id": "p6", "title": "Handmade coffee table", "description": "Solid wood", "tags": ["furniture"] }
+]

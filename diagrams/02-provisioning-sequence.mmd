@@ -1,0 +1,27 @@
+%% Provisioning & onboarding sequence
+sequenceDiagram
+  participant U as User
+  participant UI as Dashboard
+  participant API as Control API
+  participant BILL as Stripe
+  participant DB as Postgres
+  participant PROV as Provisioner
+  participant CLOUD as Cloud Provider
+  participant NODE as VPN Node
+  participant KS as KeyStore
+
+  U->>UI: Purchase subscription
+  UI->>API: Create subscription request
+  API->>BILL: Create customer & subscription
+  BILL-->>API: webhook subscription active
+  API->>DB: persist subscription
+  API->>KS: generate keys (WireGuard)
+  API->>PROV: request node provisioning (region)
+  PROV->>CLOUD: create VM / instance
+  CLOUD-->>PROV: provisioned
+  PROV->>NODE: bootstrap config + keys
+  NODE-->>API: register node (health/metadata)
+  API-->>U: return WireGuard config + QR
+  U->>NODE: establish tunnel (connect)
+  NODE->>API: usage session event
+  API->>DB: record usage

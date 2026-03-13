@@ -1,0 +1,419 @@
+{
+  "menu": [
+    {
+      "title": "Physical Products",
+      "slug": "physical-products",
+      "columns": [
+        {
+          "heading": "Electronics",
+          "items": [
+            { "title": "Mobile Phones", "slug": "mobile-phones", "children": [
+                { "title": "Smartphones", "slug": "smartphones" },
+                { "title": "Feature Phones", "slug": "feature-phones" },
+                { "title": "Refurbished Phones", "slug": "refurbished-phones" }
+              ] },
+            { "title": "Phone Accessories", "slug": "phone-accessories", "children": [
+                { "title": "Phone Cases", "slug": "phone-cases" },
+                { "title": "Chargers", "slug": "chargers" },
+                { "title": "Power Banks", "slug": "power-banks" },
+                { "title": "Screen Protectors", "slug": "screen-protectors" }
+              ] },
+            { "title": "Computers & Tablets", "slug": "computers-tablets", "children": [
+                { "title": "Laptops", "slug": "laptops" },
+                { "title": "Desktop Computers", "slug": "desktop-computers" },
+                { "title": "Tablets", "slug": "tablets" },
+                { "title": "Computer Monitors", "slug": "computer-monitors" }
+              ] },
+            { "title": "Computer Accessories", "slug": "computer-accessories", "children": [
+                { "title": "Keyboards", "slug": "keyboards" },
+                { "title": "Mouse", "slug": "mouse" },
+                { "title": "External Hard Drives", "slug": "external-hard-drives" },
+                { "title": "USB Devices", "slug": "usb-devices" }
+              ] },
+            { "title": "TV & Home Audio", "slug": "tv-home-audio", "children": [
+                { "title": "Smart TVs", "slug": "smart-tvs" },
+                { "title": "Speakers", "slug": "speakers" },
+                { "title": "Soundbars", "slug": "soundbars" },
+                { "title": "Home Theater Systems", "slug": "home-theater-systems" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Fashion",
+          "items": [
+            { "title": "Men's Clothing", "slug": "mens-clothing", "children": [
+                { "title": "Shirts", "slug": "shirts" },
+                { "title": "T-Shirts", "slug": "t-shirts" },
+                { "title": "Jeans", "slug": "jeans" },
+                { "title": "Jackets", "slug": "jackets" }
+              ] },
+            { "title": "Women's Clothing", "slug": "womens-clothing", "children": [
+                { "title": "Dresses", "slug": "dresses" },
+                { "title": "Tops", "slug": "tops" },
+                { "title": "Skirts", "slug": "skirts" },
+                { "title": "Handbags", "slug": "handbags" }
+              ] },
+            { "title": "Shoes", "slug": "shoes", "children": [
+                { "title": "Sneakers", "slug": "sneakers" },
+                { "title": "Sandals", "slug": "sandals" },
+                { "title": "Boots", "slug": "boots" },
+                { "title": "Formal Shoes", "slug": "formal-shoes" }
+              ] },
+            { "title": "Fashion Accessories", "slug": "fashion-accessories", "children": [
+                { "title": "Sunglasses", "slug": "sunglasses" },
+                { "title": "Belts", "slug": "belts" },
+                { "title": "Hats", "slug": "hats" },
+                { "title": "Scarves", "slug": "scarves" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Home & Garden",
+          "items": [
+            { "title": "Furniture", "slug": "furniture", "children": [
+                { "title": "Sofas", "slug": "sofas" },
+                { "title": "Beds", "slug": "beds" },
+                { "title": "Dining Tables", "slug": "dining-tables" },
+                { "title": "Office Chairs", "slug": "office-chairs" }
+              ] },
+            { "title": "Home Decor", "slug": "home-decor", "children": [
+                { "title": "Wall Art", "slug": "wall-art" },
+                { "title": "Mirrors", "slug": "mirrors" },
+                { "title": "Rugs", "slug": "rugs" },
+                { "title": "Lighting", "slug": "lighting" }
+              ] },
+            { "title": "Kitchen & Dining", "slug": "kitchen-dining", "children": [
+                { "title": "Cookware", "slug": "cookware" },
+                { "title": "Kitchen Tools", "slug": "kitchen-tools" },
+                { "title": "Coffee Makers", "slug": "coffee-makers" },
+                { "title": "Dinnerware", "slug": "dinnerware" }
+              ] },
+            { "title": "Garden & Outdoor", "slug": "garden-outdoor", "children": [
+                { "title": "Garden Tools", "slug": "garden-tools" },
+                { "title": "Plants", "slug": "plants" },
+                { "title": "Outdoor Furniture", "slug": "outdoor-furniture" },
+                { "title": "BBQ Equipment", "slug": "bbq-equipment" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Collectibles & Art",
+          "items": [
+            { "title": "Coins & Currency", "slug": "coins-currency", "children": [
+                { "title": "Rare Coins", "slug": "rare-coins" },
+                { "title": "Banknotes", "slug": "banknotes" },
+                { "title": "Coin Sets", "slug": "coin-sets" }
+              ] },
+            { "title": "Stamps", "slug": "stamps", "children": [
+                { "title": "Vintage Stamps", "slug": "vintage-stamps" },
+                { "title": "Stamp Collections", "slug": "stamp-collections" }
+              ] },
+            { "title": "Sports Memorabilia", "slug": "sports-memorabilia", "children": [
+                { "title": "Signed Jerseys", "slug": "signed-jerseys" },
+                { "title": "Trading Cards", "slug": "trading-cards" },
+                { "title": "Vintage Equipment", "slug": "vintage-equipment" }
+              ] },
+            { "title": "Art", "slug": "art", "children": [
+                { "title": "Paintings", "slug": "paintings" },
+                { "title": "Sculptures", "slug": "sculptures" },
+                { "title": "Prints", "slug": "prints" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Sporting Goods",
+          "items": [
+            { "title": "Fitness Equipment", "slug": "fitness-equipment", "children": [
+                { "title": "Dumbbells", "slug": "dumbbells" },
+                { "title": "Treadmills", "slug": "treadmills" },
+                { "title": "Exercise Bikes", "slug": "exercise-bikes" }
+              ] },
+            { "title": "Outdoor Sports", "slug": "outdoor-sports", "children": [
+                { "title": "Camping Gear", "slug": "camping-gear" },
+                { "title": "Hiking Equipment", "slug": "hiking-equipment" },
+                { "title": "Climbing Gear", "slug": "climbing-gear" }
+              ] },
+            { "title": "Team Sports", "slug": "team-sports", "children": [
+                { "title": "Football Gear", "slug": "football-gear" },
+                { "title": "Basketball Equipment", "slug": "basketball-equipment" },
+                { "title": "Volleyball Equipment", "slug": "volleyball-equipment" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Toys & Hobbies",
+          "items": [
+            { "title": "Toys", "slug": "toys", "children": [
+                { "title": "Dolls", "slug": "dolls" },
+                { "title": "Action Figures", "slug": "action-figures" },
+                { "title": "Educational Toys", "slug": "educational-toys" }
+              ] },
+            { "title": "Hobby Supplies", "slug": "hobby-supplies", "children": [
+                { "title": "Model Kits", "slug": "model-kits" },
+                { "title": "RC Cars", "slug": "rc-cars" },
+                { "title": "Craft Kits", "slug": "craft-kits" }
+              ] },
+            { "title": "Board Games", "slug": "board-games", "children": [
+                { "title": "Strategy Games", "slug": "strategy-games" },
+                { "title": "Family Games", "slug": "family-games" },
+                { "title": "Card Games", "slug": "card-games" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Jewelry & Watches",
+          "items": [
+            { "title": "Fine Jewelry", "slug": "fine-jewelry", "children": [
+                { "title": "Gold Jewelry", "slug": "gold-jewelry" },
+                { "title": "Diamond Jewelry", "slug": "diamond-jewelry" },
+                { "title": "Silver Jewelry", "slug": "silver-jewelry" }
+              ] },
+            { "title": "Fashion Jewelry", "slug": "fashion-jewelry", "children": [
+                { "title": "Necklaces", "slug": "necklaces" },
+                { "title": "Bracelets", "slug": "bracelets" },
+                { "title": "Earrings", "slug": "earrings" }
+              ] },
+            { "title": "Watches", "slug": "watches", "children": [
+                { "title": "Luxury Watches", "slug": "luxury-watches" },
+                { "title": "Smart Watches", "slug": "smart-watches" },
+                { "title": "Casual Watches", "slug": "casual-watches" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Health & Beauty",
+          "items": [
+            { "title": "Skincare", "slug": "skincare", "children": [
+                { "title": "Face Cream", "slug": "face-cream" },
+                { "title": "Face Wash", "slug": "face-wash" },
+                { "title": "Sunscreen", "slug": "sunscreen" }
+              ] },
+            { "title": "Makeup", "slug": "makeup", "children": [
+                { "title": "Lipstick", "slug": "lipstick" },
+                { "title": "Foundation", "slug": "foundation" },
+                { "title": "Mascara", "slug": "mascara" }
+              ] },
+            { "title": "Hair Care", "slug": "hair-care", "children": [
+                { "title": "Shampoo", "slug": "shampoo" },
+                { "title": "Hair Oil", "slug": "hair-oil" },
+                { "title": "Hair Styling Tools", "slug": "hair-styling-tools" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Business & Industrial",
+          "items": [
+            { "title": "Office Equipment", "slug": "office-equipment", "children": [
+                { "title": "Printers", "slug": "printers" },
+                { "title": "Scanners", "slug": "scanners" },
+                { "title": "Copiers", "slug": "copiers" }
+              ] },
+            { "title": "Industrial Equipment", "slug": "industrial-equipment", "children": [
+                { "title": "Machinery", "slug": "machinery" },
+                { "title": "Generators", "slug": "generators" },
+                { "title": "Tools", "slug": "tools" }
+              ] },
+            { "title": "Restaurant Equipment", "slug": "restaurant-equipment", "children": [
+                { "title": "Commercial Ovens", "slug": "commercial-ovens" },
+                { "title": "Refrigerators", "slug": "refrigerators" },
+                { "title": "Kitchen Equipment", "slug": "kitchen-equipment" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Baby & Pet",
+          "items": [
+            { "title": "Baby Clothing", "slug": "baby-clothing" },
+            { "title": "Baby Toys", "slug": "baby-toys" },
+            { "title": "Diapers", "slug": "diapers" },
+            { "title": "Baby Strollers", "slug": "baby-strollers" },
+            { "title": "Baby Feeding", "slug": "baby-feeding" },
+            { "title": "Dog Supplies", "slug": "dog-supplies", "children": [
+                { "title": "Dog Food", "slug": "dog-food" },
+                { "title": "Dog Toys", "slug": "dog-toys" },
+                { "title": "Dog Beds", "slug": "dog-beds" }
+              ] },
+            { "title": "Cat Supplies", "slug": "cat-supplies", "children": [
+                { "title": "Cat Food", "slug": "cat-food" },
+                { "title": "Cat Litter", "slug": "cat-litter" },
+                { "title": "Cat Toys", "slug": "cat-toys" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Books, Movies & Music",
+          "items": [
+            { "title": "Books", "slug": "books", "children": [
+                { "title": "Fiction", "slug": "fiction" },
+                { "title": "Educational", "slug": "educational" },
+                { "title": "Comics", "slug": "comics" }
+              ] },
+            { "title": "Movies", "slug": "movies", "children": [
+                { "title": "DVDs", "slug": "dvds" },
+                { "title": "Blu-ray", "slug": "blu-ray" },
+                { "title": "Box Sets", "slug": "box-sets" }
+              ] },
+            { "title": "Music", "slug": "music", "children": [
+                { "title": "CDs", "slug": "cds" },
+                { "title": "Vinyl Records", "slug": "vinyl-records" },
+                { "title": "Instruments", "slug": "instruments" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Motors & Real Estate",
+          "items": [
+            { "title": "Cars", "slug": "cars", "children": [
+                { "title": "New Cars", "slug": "new-cars" },
+                { "title": "Used Cars", "slug": "used-cars" },
+                { "title": "Electric Cars", "slug": "electric-cars" }
+              ] },
+            { "title": "Motorcycles", "slug": "motorcycles", "children": [
+                { "title": "Sport Bikes", "slug": "sport-bikes" },
+                { "title": "Scooters", "slug": "scooters" },
+                { "title": "Electric Bikes", "slug": "electric-bikes" }
+              ] },
+            { "title": "Car Parts", "slug": "car-parts", "children": [
+                { "title": "Engines", "slug": "engines" },
+                { "title": "Brakes", "slug": "brakes" },
+                { "title": "Suspension", "slug": "suspension" }
+              ] },
+            { "title": "Car Accessories", "slug": "car-accessories", "children": [
+                { "title": "Seat Covers", "slug": "seat-covers" },
+                { "title": "Car Chargers", "slug": "car-chargers" },
+                { "title": "Dash Cameras", "slug": "dash-cameras" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Real Estate & Travel",
+          "items": [
+            { "title": "Residential Properties", "slug": "residential-properties", "children": [
+                { "title": "Houses", "slug": "houses" },
+                { "title": "Apartments", "slug": "apartments" },
+                { "title": "Condos", "slug": "condos" }
+              ] },
+            { "title": "Commercial Properties", "slug": "commercial-properties", "children": [
+                { "title": "Offices", "slug": "offices" },
+                { "title": "Shops", "slug": "shops" },
+                { "title": "Warehouses", "slug": "warehouses" }
+              ] },
+            { "title": "Travel", "slug": "travel", "children": [
+                { "title": "Flights", "slug": "flights" },
+                { "title": "Hotels", "slug": "hotels" },
+                { "title": "Vacation Packages", "slug": "vacation-packages" },
+                { "title": "Tour Tickets", "slug": "tour-tickets" }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Digital Products",
+      "slug": "digital-products",
+      "columns": [
+        {
+          "heading": "Software",
+          "items": [
+            { "title": "Desktop Software", "slug": "desktop-software", "children": [
+                { "title": "Productivity Software", "slug": "productivity-software" },
+                { "title": "Office Software", "slug": "office-software" },
+                { "title": "Accounting Software", "slug": "accounting-software" }
+              ] },
+            { "title": "Business Software", "slug": "business-software", "children": [
+                { "title": "CRM Systems", "slug": "crm-systems" },
+                { "title": "ERP Software", "slug": "erp-software" },
+                { "title": "Inventory Management", "slug": "inventory-management" }
+              ] },
+            { "title": "Developer Tools", "slug": "developer-tools", "children": [
+                { "title": "IDE Tools", "slug": "ide-tools" },
+                { "title": "Code Editors", "slug": "code-editors" },
+                { "title": "API Tools", "slug": "api-tools" }
+              ] },
+            { "title": "Security Software", "slug": "security-software", "children": [
+                { "title": "Antivirus", "slug": "antivirus" },
+                { "title": "VPN Software", "slug": "vpn-software" },
+                { "title": "Encryption Tools", "slug": "encryption-tools" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Apps & Games",
+          "items": [
+            { "title": "Mobile Apps", "slug": "mobile-apps", "children": [
+                { "title": "Android Apps", "slug": "android-apps" },
+                { "title": "iOS Apps", "slug": "ios-apps" }
+              ] },
+            { "title": "Games", "slug": "games", "children": [
+                { "title": "PC Games", "slug": "pc-games" },
+                { "title": "Mobile Games", "slug": "mobile-games" }
+              ] },
+            { "title": "Game Assets", "slug": "game-assets", "children": [
+                { "title": "3D Game Models", "slug": "3d-game-models" },
+                { "title": "Game Characters", "slug": "game-characters" },
+                { "title": "Game Sound Effects", "slug": "game-sound-effects" }
+              ] }
+          ]
+        },
+        {
+          "heading": "Content & Media",
+          "items": [
+            { "title": "Ebooks", "slug": "ebooks", "children": [
+                { "title": "Fiction", "slug": "ebooks-fiction" },
+                { "title": "Non-Fiction", "slug": "ebooks-nonfiction" },
+                { "title": "Academic", "slug": "ebooks-academic" }
+              ] },
+            { "title": "Online Courses", "slug": "online-courses", "children": [
+                { "title": "Technology Courses", "slug": "tech-courses" },
+                { "title": "Business Courses", "slug": "business-courses" },
+                { "title": "Creative Courses", "slug": "creative-courses" }
+              ] },
+            { "title": "Music & Videos", "slug": "music-videos", "children": [
+                { "title": "Music Tracks", "slug": "music-tracks" },
+                { "title": "Videos", "slug": "stock-videos" }
+              ] }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Services",
+      "slug": "services",
+      "columns": [
+        {
+          "heading": "Digital & Tech",
+          "items": [
+            { "title": "Web Development", "slug": "web-development" },
+            { "title": "Mobile App Development", "slug": "mobile-app-development" },
+            { "title": "Software Development", "slug": "software-development" },
+            { "title": "Blockchain & Web3", "slug": "blockchain-web3" },
+            { "title": "IT & Networking", "slug": "it-networking" }
+          ]
+        },
+        {
+          "heading": "Design & Creative",
+          "items": [
+            { "title": "Graphic Design", "slug": "graphic-design" },
+            { "title": "UI / UX Design", "slug": "ui-ux-design" },
+            { "title": "Video & Animation", "slug": "video-animation" },
+            { "title": "Illustration & Art", "slug": "illustration-art" }
+          ]
+        },
+        {
+          "heading": "Local & Business",
+          "items": [
+            { "title": "Marketing & Advertising", "slug": "marketing-advertising" },
+            { "title": "Writing & Content", "slug": "writing-content" },
+            { "title": "Personal Services", "slug": "personal-services" },
+            { "title": "Home Services", "slug": "home-services" },
+            { "title": "Transport Services", "slug": "transport-services", "children": [
+                { "title": "Delivery", "slug": "delivery" },
+                { "title": "Moving Services", "slug": "moving-services" },
+                { "title": "Car Hire", "slug": "car-hire" }
+              ] }
+          ]
+        }
+      ]
+    }
+  ]
+}

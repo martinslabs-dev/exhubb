@@ -29,10 +29,12 @@ export async function updateProfileAction(
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { name, bio, location, website, ...(image !== undefined ? { image } : {}) },
+    data: { name, bio, location, website, image },
   });
 
+  // Revalidate dashboard and user image endpoint for Navbar
   revalidatePath("/dashboard", "layout");
+  revalidatePath("/api/me/image");
   return { success: true };
 }
 

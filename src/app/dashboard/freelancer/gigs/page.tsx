@@ -15,6 +15,7 @@ import {
   Star,
   ExternalLink,
 } from "lucide-react";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import GigRowActions from "./GigRowActions";
 
 export const metadata: Metadata = { title: "My Gigs" };
@@ -151,14 +152,44 @@ export default async function FreelancerGigsPage({
         </div>
       ) : (
         <div className="space-y-3">
-          {gigs.map((gig) => (
+          {gigs.map((gig) => {
+            const normalize = (raw: any) => {
+              if (!raw) return null;
+              try {
+                if (typeof raw === "string") {
+                  const s = raw.trim();
+                  if (s.startsWith("[") && s.endsWith("]")) {
+                    const parsed = JSON.parse(s);
+                    if (Array.isArray(parsed) && parsed.length) return parsed[0];
+                  }
+                  if (s.startsWith("{") && s.endsWith("}")) {
+                    const obj = JSON.parse(s);
+                    if (obj && typeof obj === "object") return obj.url ?? obj.src ?? null;
+                  }
+                  return s || null;
+                }
+                if (typeof raw === "object") return raw.url ?? raw.src ?? null;
+                return null;
+              } catch (e) {
+                return null;
+              }
+            };
+            const thumb = normalize((gig as any).coverImage);
+
+            return (
             <div
               key={gig.id}
               className="group bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all p-4 flex items-center gap-4"
             >
-              {/* Icon */}
-              <div className="w-14 h-14 rounded-xl bg-indigo-50 flex-shrink-0 flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-indigo-400" />
+              {/* Thumbnail */}
+              <div className="w-14 h-14 rounded-xl bg-indigo-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {thumb ? (
+                  <ImageWithFallback src={thumb} alt={gig.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-indigo-400" />
+                  </div>
+                )}
               </div>
 
               {/* Info */}
@@ -224,7 +255,8 @@ export default async function FreelancerGigsPage({
                 </Link>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Search, Sparkles, ArrowRight, ShieldCheck, Globe, TrendingUp, ShoppingBag, Briefcase, type LucideIcon } from "lucide-react";
+import useAuthHref from "@/hooks/useAuthHref";
 import { cn, spring } from "@/lib/utils";
 
 const TABS = ["Products", "Services"] as const;
@@ -37,7 +38,7 @@ export default function Hero() {
 
   function handleSearch() {
     const q = searchVal.trim();
-    const base = activeTab === "Products" ? "/products" : "/services";
+    const base = activeTab === "Products" ? "/products" : "/gigs";
     router.push(q ? `${base}?q=${encodeURIComponent(q)}` : base);
   }
   const containerRef               = useRef<HTMLDivElement>(null);
@@ -296,7 +297,7 @@ export default function Hero() {
                 ).map((tag) => (
                   <motion.a
                     key={tag}
-                    href={activeTab === "Products" ? `/products?q=${encodeURIComponent(tag)}` : `/services?q=${encodeURIComponent(tag)}`}
+                    href={activeTab === "Products" ? `/products?q=${encodeURIComponent(tag)}` : `/gigs?q=${encodeURIComponent(tag)}`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.97 }}
                     className="px-3 py-1 bg-white/5 hover:bg-primary-900/60 border border-white/10 hover:border-primary-700/50 rounded-full text-xs text-gray-400 hover:text-primary-300 transition-all"
@@ -316,22 +317,19 @@ export default function Hero() {
           transition={{ delay: 1.0, duration: 0.6 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-5"
         >
-          <motion.a
-            whileHover={{ scale: 1.04, boxShadow: "0 0 48px rgba(34,197,94,0.6)" }}
-            whileTap={{ scale: 0.97 }}
-            href="/products"
-            className="flex items-center gap-2.5 bg-primary-500 hover:bg-primary-400 text-white font-extrabold px-8 py-3 rounded-full text-sm ring-2 ring-primary-400/40 ring-offset-2 ring-offset-transparent shadow-[0_0_32px_rgba(34,197,94,0.35)] transition-all"
-          >
-            Start Shopping <ArrowRight className="w-4 h-4" />
-          </motion.a>
-          <motion.a
-            whileHover={{ scale: 1.04, boxShadow: "0 0 24px rgba(255,255,255,0.1)" }}
-            whileTap={{ scale: 0.97 }}
-            href="/register?intent=freelancer"
-            className="flex items-center gap-2.5 border-2 border-white/50 hover:border-white/80 bg-white/10 hover:bg-white/15 text-white font-bold px-8 py-3 rounded-full text-sm backdrop-blur-sm transition-all"
-          >
-            Offer Your Services
-          </motion.a>
+          <>
+            <motion.div whileHover={{ scale: 1.04, boxShadow: "0 0 48px rgba(34,197,94,0.6)" }} whileTap={{ scale: 0.97 }}>
+              <a href="/products" className="flex items-center gap-2.5 bg-primary-500 hover:bg-primary-400 text-white font-extrabold px-8 py-3 rounded-full text-sm ring-2 ring-primary-400/40 ring-offset-2 ring-offset-transparent shadow-[0_0_32px_rgba(34,197,94,0.35)] transition-all">
+                Start Shopping <ArrowRight className="w-4 h-4" />
+              </a>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.04, boxShadow: "0 0 24px rgba(255,255,255,0.1)" }} whileTap={{ scale: 0.97 }}>
+              <a href="/gigs" className="flex items-center gap-2.5 border-2 border-white/50 hover:border-white/80 bg-white/10 hover:bg-white/15 text-white font-bold px-8 py-3 rounded-full text-sm backdrop-blur-sm transition-all">
+                Offer Your Services
+              </a>
+            </motion.div>
+          </>
         </motion.div>
 
         {/* Trust badges */}

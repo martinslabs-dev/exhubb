@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/providers/Providers";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Exhubb — Buy Products. Hire Talent. One Platform.",
@@ -30,6 +31,16 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[#061a0e] text-white">
+        {/* Basic structured data for site */}
+        <Script id="jsonld-site" type="application/ld+json" strategy="afterInteractive">
+          {`{
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "url": "${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.example.com'}",
+            "name": "Exhubb",
+            "potentialAction": {"@type": "SearchAction", "target": "${process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.example.com'}/search?q={search_term_string}", "query-input": "required name=search_term_string"}
+          }`}
+        </Script>
         <Providers>
           {children}
         </Providers>

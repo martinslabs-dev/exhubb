@@ -13,6 +13,8 @@ export async function createGigAction(formData: FormData) {
   const title        = (formData.get("title")            as string)?.trim();
   const description  = (formData.get("description")      as string)?.trim() || null;
   const category     = (formData.get("category")         as string)?.trim();
+  const subcategory  = (formData.get("subcategory")      as string)?.trim() || null;
+  const coverImage    = (formData.get("coverImage")      as string)?.trim() || null;
   const deliveryDays = parseInt(formData.get("deliveryDays") as string, 10);
   const basicPrice   = parseFloat(formData.get("basicPrice") as string);
   const standardPrice = formData.get("standardPrice") ? parseFloat(formData.get("standardPrice") as string) : null;
@@ -24,6 +26,10 @@ export async function createGigAction(formData: FormData) {
   const isActive      = formData.get("isActive") === "on";
 
   if (!title)             return { error: "Title is required" };
+  // Word limits: title <= 80 words, description <= 1200 words
+  const countWords = (s?: string | null) => (s ? s.trim().split(/\s+/).filter(Boolean).length : 0);
+  if (countWords(title) > 80) return { error: "Title must be 80 words or fewer" };
+  if (countWords(description) > 1200) return { error: "Description must be 1200 words or fewer" };
   if (!category)          return { error: "Category is required" };
   if (isNaN(deliveryDays) || deliveryDays < 1) return { error: "Delivery time is required" };
   if (isNaN(basicPrice)   || basicPrice < 1)   return { error: "Basic price must be at least $1" };
@@ -38,6 +44,8 @@ export async function createGigAction(formData: FormData) {
       title,
       description,
       category,
+      coverImage,
+      subcategory,
       deliveryDays,
       basicPrice,
       standardPrice,
@@ -66,6 +74,8 @@ export async function updateGigAction(gigId: string, formData: FormData) {
   const title        = (formData.get("title")        as string)?.trim();
   const description  = (formData.get("description")  as string)?.trim() || null;
   const category     = (formData.get("category")     as string)?.trim();
+  const subcategory  = (formData.get("subcategory")  as string)?.trim() || null;
+  const coverImage    = (formData.get("coverImage")  as string)?.trim() || null;
   const deliveryDays = parseInt(formData.get("deliveryDays") as string, 10);
   const basicPrice   = parseFloat(formData.get("basicPrice") as string);
   const standardPrice = formData.get("standardPrice") ? parseFloat(formData.get("standardPrice") as string) : null;
@@ -77,6 +87,9 @@ export async function updateGigAction(gigId: string, formData: FormData) {
   const isActive = formData.get("isActive") === "on";
 
   if (!title)             return { error: "Title is required" };
+  const countWords = (s?: string | null) => (s ? s.trim().split(/\s+/).filter(Boolean).length : 0);
+  if (countWords(title) > 80) return { error: "Title must be 80 words or fewer" };
+  if (countWords(description) > 1200) return { error: "Description must be 1200 words or fewer" };
   if (!category)          return { error: "Category is required" };
   if (isNaN(deliveryDays) || deliveryDays < 1) return { error: "Delivery time is required" };
   if (isNaN(basicPrice)   || basicPrice < 1)   return { error: "Basic price must be at least $1" };
@@ -87,7 +100,7 @@ export async function updateGigAction(gigId: string, formData: FormData) {
 
   await prisma.gig.update({
     where: { id: gigId },
-    data: { title, description, category, deliveryDays, basicPrice, standardPrice, premiumPrice, tags, samples, isActive },
+    data: { title, description, category, coverImage, subcategory, deliveryDays, basicPrice, standardPrice, premiumPrice, tags, samples, isActive },
   });
 
   revalidatePath("/dashboard/freelancer/gigs");

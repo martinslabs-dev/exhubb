@@ -1,236 +1,79 @@
-"use client";
+import TopSellersClient from "./TopSellersClient";
+import { prisma } from "@/lib/db";
 
-import { useMemo } from "react";
-import { motion } from "framer-motion";
-import { Star, ShieldCheck, ArrowRight, Gem, Code2, Mic, Palette, Smartphone, PenLine, type LucideIcon } from "lucide-react";
-import useEmblaCarousel from "embla-carousel-react";
-import Autoplay from "embla-carousel-autoplay";
+export default async function TopSellers() {
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
 
-const LISTING_ICON_MAP: Record<string, LucideIcon> = {
-  Gem, Code2, Mic, Palette, Smartphone, PenLine,
-};
+  const orders = await prisma.order.findMany({
+    where: { gigId: { not: null }, createdAt: { gte: since } },
+    include: {
+      seller: { select: { id: true, name: true, image: true, location: true, isSellerVerified: true, storeSlug: true } },
+      gig: { select: { id: true, title: true, basicPrice: true } },
+    },
+  });
 
-const SELLERS = [
-  {
-    id: 1,
-    name: "Amara Diallo",
-    specialty: "Handmade Jewelry",
-    country: "🇸🇳 Senegal",
-    rating: 5.0,
-    reviews: 1240,
-    sales: "3.2k",
-    verified: true,
-    level: "Top Rated",
-    avatar: "AD",
-    gradient: "from-gold-600 to-gold-400",
-    listing: "Gem",
-    listingTitle: "Beaded Necklace Set",
-    listingPrice: "$48",
-  },
-  {
-    id: 2,
-    name: "Marcus Osei",
-    specialty: "Web Development",
-    country: "🇬🇭 Ghana",
-    rating: 4.9,
-    reviews: 892,
-    sales: "2.8k",
-    verified: true,
-    level: "PRO",
-    avatar: "MO",
-    gradient: "from-primary-700 to-primary-500",
-    listing: "Code2",
-    listingTitle: "Full-Stack Web App",
-    listingPrice: "$340",
-  },
-  {
-    id: 3,
-    name: "Yuki Tanaka",
-    specialty: "Voice Acting",
-    country: "🇯🇵 Japan",
-    rating: 5.0,
-    reviews: 2100,
-    sales: "5.1k",
-    verified: true,
-    level: "Top Rated",
-    avatar: "YT",
-    gradient: "from-purple-700 to-purple-500",
-    listing: "Mic",
-    listingTitle: "English Voiceover 60s",
-    listingPrice: "$55",
-  },
-  {
-    id: 4,
-    name: "Ingrid Svensson",
-    specialty: "UI/UX Design",
-    country: "🇸🇪 Sweden",
-    rating: 4.9,
-    reviews: 671,
-    sales: "1.9k",
-    verified: true,
-    level: "Level 2",
-    avatar: "IS",
-    gradient: "from-sky-700 to-sky-500",
-    listing: "Palette",
-    listingTitle: "App UI Kit – Figma",
-    listingPrice: "$120",
-  },
-  {
-    id: 5,
-    name: "Roberto Lima",
-    specialty: "Mobile Development",
-    country: "🇧🇷 Brazil",
-    rating: 5.0,
-    reviews: 540,
-    sales: "1.4k",
-    verified: true,
-    level: "PRO",
-    avatar: "RL",
-    gradient: "from-rose-700 to-rose-500",
-    listing: "Smartphone",
-    listingTitle: "React Native App",
-    listingPrice: "$580",
-  },
-  {
-    id: 6,
-    name: "Fatima Al-Hassan",
-    specialty: "Content Writing",
-    country: "🇦🇪 UAE",
-    rating: 4.8,
-    reviews: 1580,
-    sales: "4.2k",
-    verified: true,
-    level: "Top Rated",
-    avatar: "FA",
-    gradient: "from-orange-600 to-orange-400",
-    listing: "PenLine",
-    listingTitle: "SEO Blog Articles",
-    listingPrice: "$65",
-  },
-];
+  const map = new Map<string, { seller: any; count: number; listingTitle?: string; listingPrice?: number }>();
+  for (const o of orders) {
+    const s = o.seller;
+    const entry = map.get(s.id) ?? { seller: s, count: 0, listingTitle: o.gig?.title, listingPrice: o.gig?.basicPrice };
+    entry.count += 1;
+    map.set(s.id, entry);
+  }
 
-const LEVEL_COLORS: Record<string, string> = {
-  "Top Rated": "bg-primary-900/60 text-primary-300 border-primary-700/40",
-  "PRO": "bg-gold-900/60 text-gold-300 border-gold-600/40",
-  "Level 2": "bg-sky-900/60 text-sky-300 border-sky-700/40",
-};
+  const top = Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 6);
 
-export default function TopSellers() {
-  const autoplay = useMemo(() => Autoplay({ stopOnInteraction: false, delay: 2800 }), []);
-  const [emblaRef] = useEmblaCarousel(
-    { loop: true, align: "start", dragFree: true },
-    [autoplay]
-  );
+  const sellers = top.map((e) => {
+    const sales = e.count;
+    const level = e.seller.isSellerVerified ? "Top Rated" : sales >= 10 ? "PRO" : "Level 2";
+    const listingPrice = e.listingPrice ? `₦${Math.round(e.listingPrice).toLocaleString("en-NG")}` : "₦0";
+    return {
+      id: e.seller.id,
+      name: e.seller.name ?? "Unknown",
+      specialty: e.listingTitle ?? "Service",
+      country: e.seller.location ?? "",
+      rating: 0,
+      reviews: e.count,
+      sales: sales >= 1000 ? `${(sales / 1000).toFixed(1)}k` : `${sales}`,
+      verified: e.seller.isSellerVerified ?? false,
+      level,
+      avatar: e.seller.image ?? (e.seller.name ? e.seller.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("") : "U"),
+      gradient: "from-primary-700 to-primary-500",
+      listing: "Code2",
+      listingTitle: e.listingTitle ?? "",
+      listingPrice,
+      storeSlug: e.seller.storeSlug ?? null,
+    };
+  });
 
-  return (
-    <section className="section-padding bg-[#060f0a] relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none" />
+  if (sellers.length === 0) {
+    // Fallback: no orders in last 30 days — show active gigs instead
+    const gigs = await prisma.gig.findMany({
+      where: { isActive: true },
+      include: { freelancer: { select: { id: true, name: true, image: true, location: true, isSellerVerified: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    });
 
-      <div className="container-wide relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-          <div>
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="section-chip bg-primary-950/60 text-primary-400 border border-primary-800/40 mb-3"
-            >
-              Community Stars
-            </motion.p>
-            <motion.h2
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="heading-lg text-white"
-            >
-              Top Sellers This Month
-            </motion.h2>
-          </div>
-          <motion.a
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            href="#"
-            className="arrow-link text-primary-400 hover:text-primary-300 text-sm font-semibold whitespace-nowrap"
-          >
-            Browse All Sellers <ArrowRight className="w-4 h-4 ml-1 inline" />
-          </motion.a>
-        </div>
+    const fallback = gigs.map((g) => ({
+      id: g.freelancer.id,
+      name: g.freelancer.name ?? "Unknown",
+      specialty: g.title ?? "Service",
+      country: g.freelancer.location ?? "",
+      rating: 0,
+      reviews: 0,
+      sales: 0,
+      verified: g.freelancer.isSellerVerified ?? false,
+      level: g.freelancer.isSellerVerified ? "Top Rated" : "PRO",
+      avatar: g.freelancer.image ?? (g.freelancer.name ? g.freelancer.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("") : "U"),
+      gradient: "from-primary-700 to-primary-500",
+      listing: "Service",
+      listingTitle: g.title ?? "",
+      listingPrice: g.basicPrice ? `₦${Math.round(g.basicPrice).toLocaleString("en-NG")}` : "₦0",
+    }));
 
-        {/* Carousel */}
-        <div ref={emblaRef} className="overflow-hidden">
-          <div className="flex gap-5">
-            {SELLERS.map((s, i) => {
-              const ListingIcon = LISTING_ICON_MAP[s.listing];
-              return (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.07 }}
-                whileHover={{ y: -6 }}
-                className="flex-shrink-0 w-[260px] rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-5 group cursor-default"
-              >
-                {/* Avatar */}
-                <div className="relative mb-4">
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${s.gradient} flex items-center justify-center text-white text-lg font-bold ring-2 ring-offset-2 ring-offset-gray-900 ring-white/10`}>
-                    {s.avatar}
-                  </div>
-                  {s.verified && (
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full flex items-center justify-center">
-                      <ShieldCheck className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                  <span className={`absolute top-0 right-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${LEVEL_COLORS[s.level]}`}>
-                    {s.level}
-                  </span>
-                </div>
+    return <TopSellersClient sellers={fallback} />;
+  }
 
-                {/* Info */}
-                <p className="text-white font-bold text-sm leading-tight">{s.name}</p>
-                <p className="text-gray-500 text-xs mb-0.5">{s.specialty}</p>
-                <p className="text-gray-600 text-xs mb-3">{s.country}</p>
-
-                {/* Rating row */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <Star
-                        key={j}
-                        className="w-3 h-3 fill-gold-400 text-gold-400"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-gold-400 text-xs font-semibold">{s.rating}</span>
-                  <span className="text-gray-600 text-xs">({s.reviews.toLocaleString()})</span>
-                </div>
-
-                {/* Top listing */}
-                <div className="bg-white/[0.05] rounded-xl p-3 mb-4 border border-white/[0.05]">
-                  <div className="text-primary-400/60 mb-1">
-                    <ListingIcon className="w-6 h-6" />
-                  </div>
-                  <p className="text-white text-xs font-medium leading-snug">{s.listingTitle}</p>
-                  <p className="text-primary-400 text-xs font-bold mt-0.5">From {s.listingPrice}</p>
-                </div>
-
-                {/* CTA */}
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-2 text-xs font-semibold text-white border border-white/10 rounded-lg hover:border-primary-600/50 hover:bg-primary-950/40 transition-all flex items-center justify-center gap-1.5"
-                >
-                  View Profile <ArrowRight className="w-3.5 h-3.5" />
-                </motion.button>
-              </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  return <TopSellersClient sellers={sellers} />;
 }

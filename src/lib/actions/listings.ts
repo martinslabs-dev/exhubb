@@ -13,6 +13,7 @@ export async function createListingAction(formData: FormData) {
   const title       = formData.get("title")       as string;
   const description = formData.get("description") as string;
   const category    = formData.get("category")    as string;
+  const subcategory = formData.get("subcategory") as string | null;
   const price       = parseFloat(formData.get("price") as string);
   const productType = (formData.get("productType") as string ?? "PHYSICAL") === "DIGITAL" ? "DIGITAL" : "PHYSICAL";
 
@@ -57,6 +58,7 @@ export async function createListingAction(formData: FormData) {
       title,
       description: description || null,
       category,
+      subcategory: subcategory || null,
       price,
       compareAtPrice,
       stock,
@@ -111,6 +113,7 @@ export async function updateListingAction(productId: string, formData: FormData)
   const title       = formData.get("title")       as string;
   const description = formData.get("description") as string;
   const category    = formData.get("category")    as string;
+  const subcategory = formData.get("subcategory") as string | null;
   const price       = parseFloat(formData.get("price") as string);
   const stock       = parseInt(formData.get("stock") as string, 10);
   const shippingZones = formData.getAll("shippingZones") as ("NIGERIA" | "AFRICA" | "INTERNATIONAL")[];
@@ -125,6 +128,7 @@ export async function updateListingAction(productId: string, formData: FormData)
     where: { id: productId },
     data: {
       title, description: description || null, category,
+      subcategory: subcategory || null,
       price, stock, isActive, shippingZones,
       shipsFromCity: shipsFromCity || null,
       weight, nigeriaFee, africaFee, internationalFee,

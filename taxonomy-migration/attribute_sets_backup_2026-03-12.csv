@@ -1,0 +1,3 @@
+id,name,schema
+"mobile-phones","Mobile Phones","{""attributes"":[{""key"":""brand""},{""key"":""model""},{""key"":""storage_gb""},{""key"":""ram_gb""},{""key"":""condition""},{""key"":""network""},{""key"":""color""}]}"
+"mobile-accessories","Mobile Accessories","{""attributes"":[{""key"":""accessory_type""},{""key"":""compatible_brands""},{""key"":""connector_type""},{""key"":""wireless""}]}"

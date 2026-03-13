@@ -1,0 +1,49 @@
+%% High-level architecture for VPN/Proxy offering
+flowchart LR
+  subgraph USER_SIDE[Users]
+    A[Mobile App\nDesktop App\nCLI/API Clients]
+  end
+
+  subgraph CONTROL_PLANE[Control Plane]
+    CP_API[API Gateway / Auth]
+    CP_UI[Dashboard]
+    CP_BILL[Billing (Stripe)]
+    CP_DB[(Postgres / Prisma)]
+    CP_KS[(Key Store / Secrets)]
+    CP_PROV[Provisioner / Orchestrator]
+    CP_QUEUE[(Message Queue)]
+    CP_MON[Monitoring / Alerts]
+  end
+
+  subgraph DATA_PLANE[Data Plane]
+    DP_LB[Global Load Balancer / Anycast]
+    DP_NODES[VPN / Proxy Nodes\nWireGuard / OpenVPN / SOCKS5]
+    DP_METRICS[(Node Metrics / Prometheus)]
+  end
+
+  subgraph PARTNERS[Third-Party]
+    P_CLOUD[Cloud Providers (AWS/GCP/Hetzner)]
+    P_RESID[Residential Proxy Providers]
+  end
+
+  A -->|API Requests / Auth| CP_API
+  A -->|Dashboard| CP_UI
+  CP_UI --> CP_API
+  CP_API --> CP_DB
+  CP_API --> CP_BILL
+  CP_API --> CP_KS
+  CP_API --> CP_PROV
+  CP_PROV --> P_CLOUD
+  CP_PROV --> P_RESID
+  CP_PROV --> DP_NODES
+  CP_PROV --> CP_QUEUE
+  DP_LB --> DP_NODES
+  A -->|Connects to| DP_LB
+  DP_NODES --> DP_METRICS
+  DP_METRICS --> CP_MON
+  CP_MON --> CP_API
+  CP_QUEUE --> CP_PROV
+  CP_BILL --> CP_DB
+  CP_DB --> CP_API
+
+  click CP_API "#control-plane-api" "Control plane API details"

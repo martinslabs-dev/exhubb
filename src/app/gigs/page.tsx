@@ -32,7 +32,7 @@ const CATEGORIES = [
 ];
 
 interface Props {
-  searchParams: Promise<{ q?: string; category?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; sort?: string; sellerId?: string }>;
 }
 
 export default async function GigsPage({ searchParams }: Props) {

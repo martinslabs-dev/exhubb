@@ -167,11 +167,11 @@ export default async function SellerListingsPage({
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{product.title}</p>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-xs text-gray-400">{product.category}</span>
+                <p className="font-bold text-gray-900 line-clamp-2">{product.title}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs text-gray-400">
+                  <span>{product.category}</span>
                   <span className="text-gray-200">·</span>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span className="flex items-center gap-1">
                     <Tag className="w-3 h-3" />
                     Stock: {product.stock}
                   </span>
@@ -183,10 +183,30 @@ export default async function SellerListingsPage({
                     {product.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
+
+                {/* Mobile-only bottom row: price + actions */}
+                <div className="mt-3 flex items-center justify-between sm:hidden">
+                  <div>
+                    <p className="text-base font-black text-gray-900">₦{product.price.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><TrendingUp className="w-3 h-3" />0 sales</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/seller/listings/new?edit=${product.id}`}
+                      className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4 text-gray-600" />
+                    </Link>
+                    <div className="bg-white rounded-lg shadow-sm">
+                      <ProductRowActions productId={product.id} isActive={product.isActive} />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Price */}
-              <div className="text-right flex-shrink-0">
+              {/* Price (desktop) */}
+              <div className="hidden sm:block text-right flex-shrink-0">
                 <p className="text-base font-black text-gray-900">₦{product.price.toLocaleString()}</p>
                 <p className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-0.5">
                   <TrendingUp className="w-3 h-3" />
@@ -194,8 +214,8 @@ export default async function SellerListingsPage({
                 </p>
               </div>
 
-              {/* Actions (visible on mobile, hidden on larger until hover) */}
-              <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              {/* Actions (desktop hover) */}
+              <div className="hidden sm:flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link
                   href={`/dashboard/seller/listings/new?edit=${product.id}`}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
@@ -203,7 +223,6 @@ export default async function SellerListingsPage({
                 >
                   <Edit2 className="w-3.5 h-3.5 text-gray-500" />
                 </Link>
-                {/* Client-side actions component handles toggle/delete/more */}
                 <ProductRowActions productId={product.id} isActive={product.isActive} />
               </div>
             </div>

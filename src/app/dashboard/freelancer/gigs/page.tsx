@@ -194,17 +194,13 @@ export default async function FreelancerGigsPage({
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{gig.title}</p>
-                <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                  <span className="text-xs text-gray-400">{gig.category}</span>
+                <p className="font-bold text-gray-900 line-clamp-2">{gig.title}</p>
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-xs text-gray-400">
+                  <span>{gig.category}</span>
                   <span className="text-gray-200">·</span>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />{gig.deliveryDays}d delivery
-                  </span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{gig.deliveryDays}d delivery</span>
                   <span className="text-gray-200">·</span>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />{gig._count.orders} order{gig._count.orders !== 1 ? "s" : ""}
-                  </span>
+                  <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" />{gig._count.orders} order{gig._count.orders !== 1 ? "s" : ""}</span>
                   <span className="text-gray-200">·</span>
                   <span className={cn(
                     "text-xs font-bold px-2 py-0.5 rounded-full",
@@ -221,10 +217,36 @@ export default async function FreelancerGigsPage({
                     ))}
                   </div>
                 )}
+
+                {/* Mobile-only bottom row: price + actions */}
+                <div className="mt-3 flex items-center justify-between sm:hidden">
+                  <div>
+                    <p className="text-base font-black text-gray-900">From ${gig.basicPrice.toFixed(2)}</p>
+                    {gig.standardPrice && <p className="text-xs text-gray-400 mt-0.5">Std ${gig.standardPrice.toFixed(2)}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/freelancer/gigs/${gig.id}/edit`}
+                      className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4 text-gray-600" />
+                    </Link>
+                    <GigRowActions gigId={gig.id} isActive={gig.isActive} />
+                    <Link
+                      href={`/gigs/${gig.id}`}
+                      target="_blank"
+                      className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                      title="View live"
+                    >
+                      <ExternalLink className="w-4 h-4 text-gray-600" />
+                    </Link>
+                  </div>
+                </div>
               </div>
 
-              {/* Pricing */}
-              <div className="text-right flex-shrink-0">
+              {/* Pricing (desktop) */}
+              <div className="hidden sm:block text-right flex-shrink-0">
                 <p className="text-base font-black text-gray-900">From ${gig.basicPrice.toFixed(2)}</p>
                 {gig.standardPrice && (
                   <p className="text-xs text-gray-400 mt-0.5">Std ${gig.standardPrice.toFixed(2)}</p>
@@ -235,8 +257,8 @@ export default async function FreelancerGigsPage({
                 </div>
               </div>
 
-              {/* Actions (visible on mobile) */}
-              <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              {/* Actions (desktop hover) */}
+              <div className="hidden sm:flex items-center gap-1 flex-shrink-0 opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <Link
                   href={`/dashboard/freelancer/gigs/${gig.id}/edit`}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"

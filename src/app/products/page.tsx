@@ -370,11 +370,6 @@ export default async function ProductsPage({ searchParams }: Props) {
             </div>
           </aside>
 
-          {/* mobile drawer */}
-          <div className="lg:hidden">
-            <FilterDrawer />
-          </div>
-
           <div className="flex-1 min-w-0">
             {/* Page title */}
             <div className="mb-4">
@@ -391,7 +386,15 @@ export default async function ProductsPage({ searchParams }: Props) {
                 <span className="font-semibold text-gray-900">{total.toLocaleString()}</span> product{total !== 1 ? "s" : ""}
                 {q && <span className="ml-1">for &ldquo;<span className="text-primary-600">{q}</span>&rdquo;</span>}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-3">
+                <SortSelect current={sort} />
+              </div>
+            </div>
+
+            {/* Mobile controls: filters + sort */}
+            <div className="lg:hidden flex items-center gap-3 mb-4">
+              <FilterDrawer />
+              <div className="flex-1">
                 <SortSelect current={sort} />
               </div>
             </div>
@@ -439,7 +442,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                       className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-primary-200 transition-all"
                     >
                       {/* image */}
-                      <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                      <div className="h-56 sm:aspect-square bg-gray-100 relative overflow-hidden">
                         {img ? (
                           <Image
                             src={img}

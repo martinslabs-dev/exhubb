@@ -13,8 +13,8 @@ export default async function DualModeSwitcher() {
   let productGroups: { category: string | null; _count: { id: number } }[] = [];
   let gigGroups: { category: string | null; _count: { id: number } }[] = [];
   try {
-    productGroups = await prisma.product.groupBy({ by: ["category"], _count: { id: true } });
-    gigGroups = await prisma.gig.groupBy({ by: ["category"], _count: { id: true } });
+    productGroups = await prisma.product.groupBy({ by: ["category"], _count: { id: true } }) as any;
+    gigGroups = await prisma.gig.groupBy({ by: ["category"], _count: { id: true } }) as any;
   } catch (err) {
     // Log and continue with empty groups so the homepage doesn't crash
     // during database outages or local dev without DB access.

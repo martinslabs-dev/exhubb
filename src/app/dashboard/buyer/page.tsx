@@ -67,7 +67,7 @@ export default async function BuyerDashboard() {
           </p>
         </div>
         <Link
-          href="/"
+          href="/products"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700"
         >
           <Search className="w-4 h-4" />
@@ -118,7 +118,7 @@ export default async function BuyerDashboard() {
                 Your orders will appear here once you start shopping.
               </p>
               <Link
-                href="/"
+                href="/products"
                 className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900"
               >
                 Browse products <ArrowRight className="w-3 h-3" />

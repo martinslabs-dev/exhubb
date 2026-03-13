@@ -153,10 +153,10 @@ export default async function SellerListingsPage({
           {products.map((product) => (
             <div
               key={product.id}
-              className="group bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all p-4 flex items-center gap-4"
+              className="group bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4"
             >
-              {/* Thumbnail */}
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+              {/* Thumbnail (stacks full-width on mobile, fixed on sm+) */}
+              <div className="w-full sm:w-16 h-40 sm:h-16 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
                 {product.images[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
@@ -168,7 +168,7 @@ export default async function SellerListingsPage({
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{product.title}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <span className="text-xs text-gray-400">{product.category}</span>
                   <span className="text-gray-200">·</span>
                   <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -194,8 +194,8 @@ export default async function SellerListingsPage({
                 </p>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Actions (visible on mobile, hidden on larger until hover) */}
+              <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <Link
                   href={`/dashboard/seller/listings/new?edit=${product.id}`}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"

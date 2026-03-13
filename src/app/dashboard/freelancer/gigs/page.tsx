@@ -179,10 +179,10 @@ export default async function FreelancerGigsPage({
             return (
             <div
               key={gig.id}
-              className="group bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all p-4 flex items-center gap-4"
+              className="group bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-sm transition-all p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4"
             >
-              {/* Thumbnail */}
-              <div className="w-14 h-14 rounded-xl bg-indigo-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+              {/* Thumbnail (full-width on mobile) */}
+              <div className="w-full sm:w-14 h-40 sm:h-14 rounded-xl bg-indigo-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
                 {thumb ? (
                   <ImageWithFallback src={thumb} alt={gig.title} className="w-full h-full object-cover" />
                 ) : (
@@ -235,8 +235,8 @@ export default async function FreelancerGigsPage({
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Actions (visible on mobile) */}
+              <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <Link
                   href={`/dashboard/freelancer/gigs/${gig.id}/edit`}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
